@@ -567,24 +567,31 @@
               const zRange = 100;
               
               // Calculate new positions using sine and cosine for smooth orbiting motion
+              // Use different frequencies for each dimension to create a more organic movement
               const newX = 50 + xRange * Math.sin(config.movePhase);
               const newY = 50 + yRange * Math.cos(config.movePhase * 0.7);
               const newZ = zRange * Math.sin(config.movePhase * 0.5);
               
-              // Apply new positions
-              config.xPosition = newX;
-              config.yPosition = newY;
-              config.zPosition = newZ;
+              // Use lerping to smoothly transition to new positions
+              // This prevents sudden jumps when frame rates fluctuate
+              const lerpFactor = Math.min(0.05 * (60 * deltaTime), 0.2); // Adjust based on framerate
+              
+              config.xPosition = config.xPosition + (newX - config.xPosition) * lerpFactor;
+              config.yPosition = config.yPosition + (newY - config.yPosition) * lerpFactor;
+              config.zPosition = config.zPosition + (newZ - config.zPosition) * lerpFactor;
               
               // Update UI sliders to reflect current position values
-              document.getElementById('xPosition').value = Math.round(newX);
-              document.getElementById('xPositionValue').textContent = Math.round(newX) + '%';
-              
-              document.getElementById('yPosition').value = Math.round(newY);
-              document.getElementById('yPositionValue').textContent = Math.round(newY) + '%';
-              
-              document.getElementById('zPosition').value = Math.round(newZ);
-              document.getElementById('zPositionValue').textContent = Math.round(newZ);
+              // Only update UI every few frames to reduce performance impact
+              if (p.frameCount % 5 === 0) {
+                document.getElementById('xPosition').value = Math.round(config.xPosition);
+                document.getElementById('xPositionValue').textContent = Math.round(config.xPosition) + '%';
+                
+                document.getElementById('yPosition').value = Math.round(config.yPosition);
+                document.getElementById('yPositionValue').textContent = Math.round(config.yPosition) + '%';
+                
+                document.getElementById('zPosition').value = Math.round(config.zPosition);
+                document.getElementById('zPositionValue').textContent = Math.round(config.zPosition);
+              }
             }
             
             if (config.autoAngle) {
