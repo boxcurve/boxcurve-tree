@@ -425,6 +425,22 @@
       Rotation X: 0°<br>
       Rotation Y: 0°
     </div>
+    
+    <!-- Export Controls -->
+    <div class="control-group">
+      <h4>Export Options</h4>
+      <div class="control-row export-options">
+        <button id="exportSVG" class="export-button">Export as SVG</button>
+        <span id="exportStatus" class="export-status"></span>
+      </div>
+      <div class="control-row">
+        <span class="control-label">Export Quality:</span>
+        <select id="exportQuality">
+          <option value="standard">Standard</option>
+          <option value="high">High Resolution</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1626,6 +1642,11 @@
           needsUpdate = true;
         });
         
+        // Export SVG button
+        document.getElementById('exportSVG').addEventListener('click', function() {
+          exportTreeAsSVG();
+        });
+        
         // Log that controls are set up
         console.log("Control panel setup complete");
       }
@@ -1777,6 +1798,281 @@
       // Helper function to convert RGB to hex
       function rgbToHex(r, g, b) {
         return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+      }
+      
+      // Function to export the tree as SVG
+      function exportTreeAsSVG() {
+        const statusElement = document.getElementById('exportStatus');
+        statusElement.textContent = "Generating SVG...";
+        
+        // Create a new SVG element
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svgElement = document.createElementNS(svgNS, "svg");
+        
+        // Set the dimensions of the SVG
+        const exportQuality = document.getElementById('exportQuality').value;
+        const scaleFactor = exportQuality === 'high' ? 2 : 1;
+        const width = p.width * scaleFactor;
+        const height = p.height * scaleFactor;
+        
+        svgElement.setAttribute("width", width);
+        svgElement.setAttribute("height", height);
+        svgElement.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        
+        // Add metadata for Adobe Illustrator
+        const metadataElement = document.createElementNS(svgNS, "metadata");
+        metadataElement.textContent = "Created with BoxcurveTree Generator - Compatible with Adobe Illustrator";
+        svgElement.appendChild(metadataElement);
+        
+        // Create a collection to hold all the shapes
+        const treeGroup = document.createElementNS(svgNS, "g");
+        treeGroup.setAttribute("id", "boxcurve-tree");
+        treeGroup.setAttribute("transform", `translate(${width/2}, ${height/2})`);
+        svgElement.appendChild(treeGroup);
+        
+        // Track original squares drawn count to compare
+        const originalSquaresDrawn = squaresDrawn;
+        
+        // Use a custom renderer to capture the tree structure
+        const svgRenderer = {
+          shapes: [],
+          
+          // Add a rectangle to the SVG output
+          addRect: function(x, y, z, width, height, depth, fillColor, strokeColor, isFrontOrBack) {
+            if ((config.fillType === 'sidewalls' && isFrontOrBack) || depth === 0) {
+              return; // Skip front/back faces for sidewalls only mode
+            }
+            
+            const rect = document.createElementNS(svgNS, "rect");
+            
+            // Apply the same transformations as in the canvas
+            const transformStr = this.getTransformString(x, y, z);
+            rect.setAttribute("transform", transformStr);
+            
+            rect.setAttribute("x", -width/2);
+            rect.setAttribute("y", -height/2);
+            rect.setAttribute("width", width);
+            rect.setAttribute("height", height);
+            
+            // Apply styles
+            if (fillColor) {
+              rect.setAttribute("fill", `rgb(${fillColor[0]}, ${fillColor[1]}, ${fillColor[2]})`);
+            } else {
+              rect.setAttribute("fill", "none");
+            }
+            
+            if (strokeColor) {
+              rect.setAttribute("stroke", `rgb(${strokeColor[0]}, ${strokeColor[1]}, ${strokeColor[2]})`);
+              rect.setAttribute("stroke-width", config.strokeWeight * scaleFactor);
+            }
+            
+            this.shapes.push(rect);
+          },
+          
+          // Get SVG transform string for positioning
+          getTransformString: function(x, y, z) {
+            const xPos = p.map(config.xPosition, 0, 100, -p.width/2, p.width/2) * scaleFactor;
+            const yPos = p.map(config.yPosition, 0, 100, -p.height/2, p.height/2) * scaleFactor;
+            
+            let transformStr = `translate(${x * scaleFactor * zoomFactor}, ${y * scaleFactor * zoomFactor})`;
+            
+            // Apply rotations
+            if (config.rotationX !== 0) {
+              transformStr += ` rotateX(${config.rotationX})`;
+            }
+            if (config.rotationY !== 0) {
+              transformStr += ` rotateY(${config.rotationY})`;
+            }
+            if (config.rotationZ !== 0) {
+              transformStr += ` rotateZ(${config.rotationZ})`;
+            }
+            
+            return transformStr;
+          }
+        };
+        
+        // Custom function to draw the tree for SVG export
+        function exportBoxcurveTree(x, y, size, maxDepth, svgRenderer) {
+          // Mimic the drawBoxcurveTree function logic
+          const p1 = [-size / 2, -size / 2];
+          const p2 = [size / 2, -size / 2];
+          exportGenerateTree([p1, p2], 0, maxDepth, svgRenderer);
+        }
+        
+        function exportGenerateTree(coordSet, depth, maxDepth, svgRenderer) {
+          if (depth >= maxDepth) return;
+          
+          const p1 = coordSet[0];
+          const p2 = coordSet[1];
+          
+          // Draw the cube
+          const cubeCoordSet = exportDrawCube(p1, p2, depth, svgRenderer);
+          
+          // Calculate next depth based on scaling factor
+          const size = p.dist(p1[0], p1[1], p2[0], p2[1]);
+          
+          // Draw the triangle connection
+          const triangleCoordSets = exportDrawTriangle(cubeCoordSet[0], cubeCoordSet[1], depth, config.branchAngle, false);
+          
+          // Continue recursion
+          for (let nextCoordSet of triangleCoordSets) {
+            exportGenerateTree(nextCoordSet, depth + 1, maxDepth, svgRenderer);
+          }
+        }
+        
+        function exportDrawCube(p1, p2, depth, svgRenderer) {
+          // Calculate the square dimensions
+          const p1_to_p2 = [p1[0] - p2[0], p1[1] - p2[1]];
+          const p1_to_p4 = [-p1_to_p2[1], p1_to_p2[0]];
+          
+          const p3 = [p2[0] + p1_to_p4[0], p2[1] + p1_to_p4[1]];
+          const p4 = [p1[0] + p1_to_p4[0], p1[1] + p1_to_p4[1]];
+          
+          // Calculate width and height based on points
+          const width = Math.sqrt(Math.pow(p2[0] - p1[0], 2) + Math.pow(p2[1] - p1[1], 2));
+          const height = width; // Square
+
+          // Get style from original renderer
+          const style = getStyle(depth, "cube", 0);
+          
+          // Calculate cube center
+          const centerX = (p1[0] + p2[0] + p3[0] + p4[0]) / 4;
+          const centerY = (p1[1] + p2[1] + p3[1] + p4[1]) / 4;
+          
+          // Calculate actual depth based on settings
+          let actualDepth = config.pixelDepth;
+          if (config.depthByLevel) {
+            actualDepth = config.pixelDepth * (1.0 - (depth / config.maxDepth) * 0.5);
+          }
+          
+          // Calculate lighting effect
+          let shadeFactor = 1.0;
+          if (config.enableLighting) {
+            // Simplified lighting calculation for front face
+            const lightX = p.radians(config.lightAngleX);
+            const lightY = p.radians(config.lightAngleY);
+            const dotProduct = Math.cos(lightY) * Math.cos(lightX);
+            const lightIntensityFactor = config.lightIntensity / 100;
+            shadeFactor = 0.3 + 0.7 * Math.max(0, dotProduct) * lightIntensityFactor;
+          }
+          
+          // Apply lighting to colors
+          let fillColor = null;
+          if (style.fill) {
+            fillColor = [
+              Math.round(style.fill[0] * shadeFactor),
+              Math.round(style.fill[1] * shadeFactor),
+              Math.round(style.fill[2] * shadeFactor)
+            ];
+          }
+          
+          // Draw front face
+          svgRenderer.addRect(centerX, centerY, 0, width, height, 0, fillColor, style.outline, true);
+          
+          // Draw side faces with depth
+          if (actualDepth > 0) {
+            const backZ = -actualDepth;
+            const sideShadeFactor = shadeFactor * 0.8;
+            
+            // Side faces with adjusted colors for lighting
+            let sideFillColor = null;
+            if (style.fill) {
+              sideFillColor = [
+                Math.round(style.fill[0] * sideShadeFactor),
+                Math.round(style.fill[1] * sideShadeFactor),
+                Math.round(style.fill[2] * sideShadeFactor)
+              ];
+            }
+            
+            // Add side faces - simplified for SVG export
+            svgRenderer.addRect(centerX - width/2, centerY, backZ/2, actualDepth, height, actualDepth, sideFillColor, style.outline, false);
+            svgRenderer.addRect(centerX + width/2, centerY, backZ/2, actualDepth, height, actualDepth, sideFillColor, style.outline, false);
+            svgRenderer.addRect(centerX, centerY - height/2, backZ/2, width, actualDepth, actualDepth, sideFillColor, style.outline, false);
+            svgRenderer.addRect(centerX, centerY + height/2, backZ/2, width, actualDepth, actualDepth, sideFillColor, style.outline, false);
+            
+            // Back face
+            const backShadeFactor = shadeFactor * 0.7;
+            let backFillColor = null;
+            if (style.fill) {
+              backFillColor = [
+                Math.round(style.fill[0] * backShadeFactor),
+                Math.round(style.fill[1] * backShadeFactor),
+                Math.round(style.fill[2] * backShadeFactor)
+              ];
+            }
+            
+            svgRenderer.addRect(centerX, centerY, backZ, width, height, actualDepth, backFillColor, style.outline, true);
+          }
+          
+          return [p3, p4];
+        }
+        
+        function exportDrawTriangle(p1, p2, depth, angle, mirror) {
+          // Same logic as drawTriangle
+          let angle1 = p.PI * ((90 - angle) / 180);
+          let angle2 = p.PI * (angle / 180);
+          
+          if (mirror) {
+            [angle1, angle2] = [angle2, angle1];
+          }
+          
+          const angle3 = p.PI - angle1 - angle2;
+          
+          const p1_to_p2 = [p2[0] - p1[0], p2[1] - p1[1]];
+          const length_p1_to_p2 = Math.sqrt(p1_to_p2[0] * p1_to_p2[0] + p1_to_p2[1] * p1_to_p2[1]);
+          const length_p1_to_p3 = length_p1_to_p2 * Math.sin(angle2) / Math.sin(angle3);
+          
+          const x = p1_to_p2[0];
+          const y = p1_to_p2[1];
+          
+          const equation_1 = p1[0] * x + p1[1] * y + length_p1_to_p3 * length_p1_to_p2 * Math.cos(angle1);
+          const equation_2 = p2[1] * x - p2[0] * y + length_p1_to_p3 * length_p1_to_p2 * Math.sin(angle1);
+          
+          const factor = 1 / (length_p1_to_p2 * length_p1_to_p2);
+          const x3 = factor * (x * equation_1 - y * equation_2);
+          const y3 = factor * (y * equation_1 + x * equation_2);
+          
+          const p3 = [x3, y3];
+          
+          return [[p3, p1], [p2, p3]];
+        }
+        
+        // Generate the tree for SVG
+        exportBoxcurveTree(0, 0, config.startingSize * scaleFactor, currentDepth, svgRenderer);
+        
+        // Add all the shapes to the SVG group
+        svgRenderer.shapes.forEach(shape => {
+          treeGroup.appendChild(shape);
+        });
+        
+        // Convert SVG to string
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svgElement);
+        
+        // Create a Blob containing the SVG data
+        const blob = new Blob([svgString], {type: 'image/svg+xml'});
+        
+        // Create a URL for the blob
+        const url = URL.createObjectURL(blob);
+        
+        // Create a download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = `boxcurve_tree_${new Date().toISOString().slice(0,10)}.svg`;
+        
+        // Trigger the download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Release the URL
+        URL.revokeObjectURL(url);
+        
+        // Update status
+        statusElement.textContent = `SVG exported with ${svgRenderer.shapes.length} shapes!`;
+        setTimeout(() => {
+          statusElement.textContent = "Ready for export";
+        }, 3000);
       }
     }
   </script>
