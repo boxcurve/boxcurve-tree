@@ -713,22 +713,22 @@
             
             // Create smooth movement patterns
             const xRange = 30; // Range of movement in percentage
-            const yRange = 20;
+            const yRange = 8; // Significantly reduced y-range to eliminate jumps
             const zRange = 100;
             
             // Calculate new positions using sine and cosine for smooth orbiting motion
-            // Use different frequencies for each dimension to create a more organic movement
             const newX = 50 + xRange * Math.sin(config.movePhase);
-            const newY = 50 + yRange * Math.cos(config.movePhase * 0.7);
+            const newY = 50 + yRange * Math.cos(config.movePhase * 0.3); // Much slower frequency for Y
             const newZ = zRange * Math.sin(config.movePhase * 0.5);
             
-            // Use lerping to smoothly transition to new positions
-            // This prevents sudden jumps when frame rates fluctuate
-            const lerpFactor = Math.min(0.05 * (60 * deltaTime), 0.2); // Adjust based on framerate
+            // Use separate lerp factors for X/Z vs Y for better control
+            const xzLerpFactor = Math.min(0.05 * (60 * deltaTime), 0.2);
+            const yLerpFactor = Math.min(0.02 * (60 * deltaTime), 0.08); // Much gentler for Y
             
-            config.xPosition = config.xPosition + (newX - config.xPosition) * lerpFactor;
-            config.yPosition = config.yPosition + (newY - config.yPosition) * lerpFactor;
-            config.zPosition = config.zPosition + (newZ - config.zPosition) * lerpFactor;
+            // Apply movement with separate smoothing for each axis
+            config.xPosition = config.xPosition + (newX - config.xPosition) * xzLerpFactor;
+            config.yPosition = config.yPosition + (newY - config.yPosition) * yLerpFactor;
+            config.zPosition = config.zPosition + (newZ - config.zPosition) * xzLerpFactor;
             
             // Update UI sliders to reflect current position values
             // Only update UI every few frames to reduce performance impact
