@@ -666,6 +666,14 @@
           // Smoothly adjust zoom
           zoomFactor += (targetZoom - zoomFactor) * config.zoomSpeed;
           
+          // Ensure zoom is exactly 1.0 when at the top of the page (with a small tolerance)
+          if (scrollProgress < 0.01) {
+            zoomFactor = p.lerp(zoomFactor, 1.0, 0.1);  // Faster convergence to 1.0 when near top
+            if (Math.abs(zoomFactor - 1.0) < 0.01) {
+              zoomFactor = 1.0;  // Snap to exactly 1.0 when very close
+            }
+          }
+          
           p.push();
           
           // Calculate the position in screen coordinates
