@@ -367,6 +367,52 @@
         </div>
       </div>
       
+      <!-- New 3D Depth Control Group -->
+      <div class="control-group">
+        <h4>3D Depth Settings</h4>
+        <div class="control-row">
+          <span class="control-label">Pixel Depth:</span>
+          <span class="control-value" id="pixelDepthValue">10</span>
+          <input type="number" id="pixelDepthNumber" min="0" max="50" value="10" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="pixelDepth" min="0" max="50" value="10">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Auto Depth Variation:</span>
+          <input type="checkbox" id="autoDepth" checked>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Depth by Level:</span>
+          <input type="checkbox" id="depthByLevel" checked>
+        </div>
+      </div>
+      
+      <!-- New Lighting Control Group -->
+      <div class="control-group">
+        <h4>Lighting Settings</h4>
+        <div class="control-row">
+          <span class="control-label">Light Angle X:</span>
+          <span class="control-value" id="lightAngleXValue">45°</span>
+          <input type="number" id="lightAngleXNumber" min="-180" max="180" value="45" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="lightAngleX" min="-180" max="180" value="45">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Light Angle Y:</span>
+          <span class="control-value" id="lightAngleYValue">45°</span>
+          <input type="number" id="lightAngleYNumber" min="-180" max="180" value="45" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="lightAngleY" min="-180" max="180" value="45">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Light Intensity:</span>
+          <span class="control-value" id="lightIntensityValue">80%</span>
+          <input type="number" id="lightIntensityNumber" min="0" max="100" value="80" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="lightIntensity" min="0" max="100" value="80">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Enable Lighting:</span>
+          <input type="checkbox" id="enableLighting" checked>
+        </div>
+      </div>
+      
       <div class="metrics" id="metrics">
         <h4>Debug Information</h4>
         Current Depth: 2/12<br>
@@ -428,7 +474,19 @@
           autoMove: true,
           moveSpeed: 0.1,
           movePhase: 0,  // Used for cyclic movement patterns
-          startingSize: 120
+          startingSize: 120,
+          
+          // New 3D Depth Settings
+          pixelDepth: 10, // Depth of the cubes in pixels
+          autoDepth: true, // Automatically vary depth
+          depthPhase: 0, // Used for cyclic depth variation
+          depthByLevel: true, // Vary depth by tree level
+          
+          // New Lighting Settings
+          lightAngleX: 45, // Light direction X angle
+          lightAngleY: 45, // Light direction Y angle
+          lightIntensity: 80, // Light intensity percentage
+          enableLighting: true // Enable/disable lighting effects
         };
         
         // Define presets
@@ -459,7 +517,14 @@
             zPosition: 0,
             autoMove: true,
             moveSpeed: 0.1,
-            startingSize: 120
+            startingSize: 120,
+            pixelDepth: 10,
+            autoDepth: true,
+            depthByLevel: true,
+            lightAngleX: 45,
+            lightAngleY: 45,
+            lightIntensity: 80,
+            enableLighting: true
           },
           preset2: {
             name: "Spiral Galaxy",
@@ -487,7 +552,14 @@
             zPosition: -50,
             autoMove: true,
             moveSpeed: 0.2,
-            startingSize: 150
+            startingSize: 150,
+            pixelDepth: 15,
+            autoDepth: true,
+            depthByLevel: true,
+            lightAngleX: 60,
+            lightAngleY: 30,
+            lightIntensity: 90,
+            enableLighting: true
           },
           preset3: {
             name: "Static",
@@ -515,7 +587,14 @@
             zPosition: 0,
             autoMove: false,
             moveSpeed: 0,
-            startingSize: 120
+            startingSize: 120,
+            pixelDepth: 8,
+            autoDepth: false,
+            depthByLevel: true,
+            lightAngleX: 45,
+            lightAngleY: 45,
+            lightIntensity: 70,
+            enableLighting: true
           }
         };
         
@@ -592,7 +671,7 @@
           lastFrameTime = currentTime;
           
           // Update auto-rotation, auto-movement, and auto-angle if enabled
-          if (config.autoRotate || config.autoMove || config.autoAngle) {
+          if (config.autoRotate || config.autoMove || config.autoAngle || config.autoDepth) {
             if (config.autoRotate) {
               // Rotate primarily around Y axis, but also slightly around Z for a more interesting effect
               config.rotationY += config.rotationSpeed * deltaTime * 15;
@@ -667,6 +746,28 @@
               // Update UI slider to reflect current angle value
               document.getElementById('branchAngle').value = Math.round(newAngle);
               document.getElementById('branchAngleValue').textContent = Math.round(newAngle) + '°';
+            }
+            
+            // New code for auto-depth
+            if (config.autoDepth) {
+              // Update depth phase
+              config.depthPhase += 0.2 * deltaTime;
+              if (config.depthPhase > Math.PI * 2) config.depthPhase -= Math.PI * 2;
+              
+              // Create smooth depth oscillation
+              const minDepth = 5;
+              const maxDepth = 25;
+              const rangeDepth = maxDepth - minDepth;
+              
+              // Use sine wave to smoothly oscillate between min and max depth
+              const newDepth = minDepth + rangeDepth * (0.5 + 0.5 * Math.sin(config.depthPhase));
+              
+              // Apply new depth
+              config.pixelDepth = newDepth;
+              
+              // Update UI slider to reflect current depth value
+              document.getElementById('pixelDepth').value = Math.round(newDepth);
+              document.getElementById('pixelDepthValue').textContent = Math.round(newDepth);
             }
             
             needsUpdate = true;
@@ -790,12 +891,45 @@
           // Get style based on settings
           const style = getStyle(depth, "cube", scrollProgress);
           
-          // Draw the square in 3D space
+          // Calculate actual depth based on settings
+          let actualDepth = config.pixelDepth;
+          
+          // Vary depth by level if enabled
+          if (config.depthByLevel) {
+            actualDepth = config.pixelDepth * (1.0 - (depth / config.maxDepth) * 0.5);
+          }
+          
+          // Calculate lighting effect if enabled
+          let shadeFactor = 1.0;
+          
+          if (config.enableLighting) {
+            // Convert light angles to radians
+            const lightX = p.radians(config.lightAngleX);
+            const lightY = p.radians(config.lightAngleY);
+            
+            // Calculate light direction vector (simplified)
+            const lightDirX = Math.cos(lightY) * Math.sin(lightX);
+            const lightDirY = Math.sin(lightY);
+            const lightDirZ = Math.cos(lightY) * Math.cos(lightX);
+            
+            // We'll use a simple directional lighting model
+            // The face normal is just (0, 0, 1) for the front face
+            const dotProduct = lightDirZ; // Simplified dot product for front face
+            
+            // Map the dot product to shade
+            const lightIntensityFactor = config.lightIntensity / 100;
+            shadeFactor = 0.3 + 0.7 * Math.max(0, dotProduct) * lightIntensityFactor;
+          }
+          
+          // Draw the 3D cube - first the front face
           p.beginShape();
           
           // Set fill color if specified
           if (style.fill) {
-            p.fill(style.fill[0], style.fill[1], style.fill[2]);
+            const r = style.fill[0] * shadeFactor;
+            const g = style.fill[1] * shadeFactor;
+            const b = style.fill[2] * shadeFactor;
+            p.fill(r, g, b);
           } else {
             p.noFill();
           }
@@ -812,12 +946,82 @@
             p.noStroke();
           }
           
-          // Draw the square as a flat plane in 3D space
+          // Front face
           p.vertex(p1[0], p1[1], 0);
           p.vertex(p2[0], p2[1], 0);
           p.vertex(p3[0], p3[1], 0);
           p.vertex(p4[0], p4[1], 0);
           p.endShape(p.CLOSE);
+          
+          // Only draw the other faces if we have actual depth
+          if (actualDepth > 0) {
+            // Calculate back points
+            const backZ = -actualDepth;
+            
+            // Calculate darker shade for side faces
+            const sideShadeFactor = shadeFactor * 0.8; // Make sides slightly darker
+            
+            // Side faces (only if the cube has depth)
+            // Left face
+            p.beginShape();
+            if (style.fill) {
+              const r = style.fill[0] * sideShadeFactor;
+              const g = style.fill[1] * sideShadeFactor;
+              const b = style.fill[2] * sideShadeFactor;
+              p.fill(r, g, b);
+            }
+            p.vertex(p1[0], p1[1], 0);
+            p.vertex(p4[0], p4[1], 0);
+            p.vertex(p4[0], p4[1], backZ);
+            p.vertex(p1[0], p1[1], backZ);
+            p.endShape(p.CLOSE);
+            
+            // Right face
+            p.beginShape();
+            p.vertex(p2[0], p2[1], 0);
+            p.vertex(p3[0], p3[1], 0);
+            p.vertex(p3[0], p3[1], backZ);
+            p.vertex(p2[0], p2[1], backZ);
+            p.endShape(p.CLOSE);
+            
+            // Top face
+            p.beginShape();
+            const topShadeFactor = shadeFactor * 0.9; // Slightly darker
+            if (style.fill) {
+              const r = style.fill[0] * topShadeFactor;
+              const g = style.fill[1] * topShadeFactor;
+              const b = style.fill[2] * topShadeFactor;
+              p.fill(r, g, b);
+            }
+            p.vertex(p1[0], p1[1], 0);
+            p.vertex(p2[0], p2[1], 0);
+            p.vertex(p2[0], p2[1], backZ);
+            p.vertex(p1[0], p1[1], backZ);
+            p.endShape(p.CLOSE);
+            
+            // Bottom face
+            p.beginShape();
+            p.vertex(p4[0], p4[1], 0);
+            p.vertex(p3[0], p3[1], 0);
+            p.vertex(p3[0], p3[1], backZ);
+            p.vertex(p4[0], p4[1], backZ);
+            p.endShape(p.CLOSE);
+            
+            // Back face
+            p.beginShape();
+            const backShadeFactor = shadeFactor * 0.7; // Make back face darker
+            if (style.fill) {
+              const r = style.fill[0] * backShadeFactor;
+              const g = style.fill[1] * backShadeFactor;
+              const b = style.fill[2] * backShadeFactor;
+              p.fill(r, g, b);
+            }
+            p.vertex(p1[0], p1[1], backZ);
+            p.vertex(p2[0], p2[1], backZ);
+            p.vertex(p3[0], p3[1], backZ);
+            p.vertex(p4[0], p4[1], backZ);
+            p.endShape(p.CLOSE);
+          }
           
           squaresDrawn++;
           
@@ -923,7 +1127,9 @@
             Growth: ${config.growthStart}% to ${config.growthEnd}%<br>
             Branch Angle: ${Math.round(config.branchAngle)}° (Auto: ${config.autoAngle ? "On" : "Off"})<br>
             Position: X:${Math.round(config.xPosition)}%, Y:${Math.round(config.yPosition)}%, Z:${Math.round(config.zPosition)} (Auto: ${config.autoMove ? "On" : "Off"})<br>
-            Rotation: X:${Math.round(config.rotationX)}°, Y:${Math.round(config.rotationY)}°, Z:${Math.round(config.rotationZ)}° (Auto: ${config.autoRotate ? "On" : "Off"})
+            Rotation: X:${Math.round(config.rotationX)}°, Y:${Math.round(config.rotationY)}°, Z:${Math.round(config.rotationZ)}° (Auto: ${config.autoRotate ? "On" : "Off"})<br>
+            Pixel Depth: ${Math.round(config.pixelDepth)} (Auto: ${config.autoDepth ? "On" : "Off"})<br>
+            Light Angle: X:${Math.round(config.lightAngleX)}°, Y:${Math.round(config.lightAngleY)}° (Intensity: ${config.lightIntensity}%)
           `;
         }
         
@@ -1318,6 +1524,91 @@
           document.getElementById('strokeWeight').addEventListener('input', function() {
             config.strokeWeight = parseInt(this.value);
             document.getElementById('strokeWeightValue').textContent = this.value;
+            needsUpdate = true;
+          });
+          
+          // New 3D Depth controls
+          document.getElementById('pixelDepth').addEventListener('input', function() {
+            config.pixelDepth = parseInt(this.value);
+            document.getElementById('pixelDepthValue').textContent = this.value;
+            document.getElementById('pixelDepthNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('pixelDepthNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 0 && value <= 50) {
+              config.pixelDepth = value;
+              document.getElementById('pixelDepthValue').textContent = value;
+              document.getElementById('pixelDepth').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('autoDepth').addEventListener('change', function() {
+            config.autoDepth = this.checked;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('depthByLevel').addEventListener('change', function() {
+            config.depthByLevel = this.checked;
+            needsUpdate = true;
+          });
+          
+          // New Lighting controls
+          document.getElementById('lightAngleX').addEventListener('input', function() {
+            config.lightAngleX = parseInt(this.value);
+            document.getElementById('lightAngleXValue').textContent = this.value + '°';
+            document.getElementById('lightAngleXNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('lightAngleXNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= -180 && value <= 180) {
+              config.lightAngleX = value;
+              document.getElementById('lightAngleXValue').textContent = value + '°';
+              document.getElementById('lightAngleX').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('lightAngleY').addEventListener('input', function() {
+            config.lightAngleY = parseInt(this.value);
+            document.getElementById('lightAngleYValue').textContent = this.value + '°';
+            document.getElementById('lightAngleYNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('lightAngleYNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= -180 && value <= 180) {
+              config.lightAngleY = value;
+              document.getElementById('lightAngleYValue').textContent = value + '°';
+              document.getElementById('lightAngleY').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('lightIntensity').addEventListener('input', function() {
+            config.lightIntensity = parseInt(this.value);
+            document.getElementById('lightIntensityValue').textContent = this.value + '%';
+            document.getElementById('lightIntensityNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('lightIntensityNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 0 && value <= 100) {
+              config.lightIntensity = value;
+              document.getElementById('lightIntensityValue').textContent = value + '%';
+              document.getElementById('lightIntensity').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('enableLighting').addEventListener('change', function() {
+            config.enableLighting = this.checked;
             needsUpdate = true;
           });
           
