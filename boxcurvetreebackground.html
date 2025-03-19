@@ -1,939 +1,1104 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Interactive Boxcurve Tree</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-      background: #ffffff;
-      font-family: 'Poppins', sans-serif;
-    }
-    #treeCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: -1;
-    }
-    .content {
-      height: 300vh; /* Allows scrolling */
-      padding-top: 20vh;
-      text-align: center;
-      color: #221F20;
-    }
-    #controlPanel {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background-color: rgba(255, 255, 255, 0.9);
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-      max-width: 350px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    .control-group {
-      margin-bottom: 12px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 12px;
-    }
-    .control-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .control-label {
-      flex: 1;
-      font-weight: bold;
-    }
-    .control-value {
-      flex: 0 0 80px;
-      text-align: right;
-      margin-right: 10px;
-    }
-    input[type="range"] {
-      width: 100%;
-    }
-    input[type="number"] {
-      width: 60px;
-    }
-    input[type="color"] {
-      width: 40px;
-      height: 24px;
-    }
-    button {
-      padding: 6px 10px;
-      background: #F04E23;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-right: 5px;
-    }
-    button:hover {
-      background: #d13d1a;
-    }
-    .color-preview {
-      width: 20px;
-      height: 20px;
-      display: inline-block;
-      border: 1px solid #ccc;
-      vertical-align: middle;
-    }
-    .metrics {
-      font-size: 12px;
-      font-family: monospace;
-      margin-top: 15px;
-      background-color: rgba(0, 0, 0, 0.05);
-      padding: 12px;
-      border-radius: 4px;
-      line-height: 1.6;
-    }
-    .metrics h4 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      color: #221F20;
-    }
-    .toggle-panel {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.9);
-      border: none;
-      border-radius: 4px;
-      width: 36px;
-      height: 36px;
-      padding: 6px;
-      z-index: 1001;
-      display: none;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-    .toggle-panel:hover {
-      transform: scale(1.1);
-    }
-    .hide-panel {
-      display: block;
-      margin-left: auto;
-      margin-bottom: 10px;
-      background: #221F20;
-    }
-    h3 {
-      margin-top: 0;
-      color: #221F20;
-    }
-    .presets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="content">
-    <!-- Empty content div for scrolling -->
-  </div>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Interactive Boxcurve Tree</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        background: #ffffff;
+        font-family: 'Poppins', sans-serif;
+      }
+      #treeCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: -1;
+      }
+      .content {
+        height: 300vh; /* Allows scrolling */
+        padding-top: 20vh;
+        text-align: center;
+        color: #221F20;
+      }
+      #controlPanel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        max-width: 350px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .control-group {
+        margin-bottom: 12px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 12px;
+      }
+      .control-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .control-label {
+        flex: 1;
+        font-weight: bold;
+      }
+      .control-value {
+        flex: 0 0 80px;
+        text-align: right;
+        margin-right: 10px;
+      }
+      input[type="range"] {
+        width: 100%;
+      }
+      input[type="number"] {
+        width: 60px;
+      }
+      input[type="color"] {
+        width: 40px;
+        height: 24px;
+      }
+      button {
+        padding: 6px 10px;
+        background: #F04E23;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 5px;
+      }
+      button:hover {
+        background: #d13d1a;
+      }
+      .color-preview {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        border: 1px solid #ccc;
+        vertical-align: middle;
+      }
+      .metrics {
+        font-size: 12px;
+        font-family: monospace;
+        margin-top: 15px;
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 12px;
+        border-radius: 4px;
+        line-height: 1.6;
+      }
+      .metrics h4 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        color: #221F20;
+      }
+      .toggle-panel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 4px;
+        width: 36px;
+        height: 36px;
+        padding: 6px;
+        z-index: 1001;
+        display: none;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+      .toggle-panel:hover {
+        transform: scale(1.1);
+      }
+      .hide-panel {
+        display: block;
+        margin-left: auto;
+        margin-bottom: 10px;
+        background: #221F20;
+      }
+      h3 {
+        margin-top: 0;
+        color: #221F20;
+      }
+      .presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <!-- Empty content div for scrolling -->
+    </div>
 
-  <button class="toggle-panel" id="showPanel" style="display: block;">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M4 4H20V20H4V4Z" fill="#F04E23"/>
-      <rect x="8" y="8" width="8" height="8" fill="white"/>
-    </svg>
-  </button>
+    <button class="toggle-panel" id="showPanel" style="display: block;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 4H20V20H4V4Z" fill="#F04E23"/>
+        <rect x="8" y="8" width="8" height="8" fill="white"/>
+      </svg>
+    </button>
 
-  <div id="controlPanel" style="display: none;">
-    <button class="hide-panel" id="hidePanel">Hide Controls</button>
-    <h3>Boxcurve Tree Control Panel</h3>
-    
-    <div class="presets">
-      <button id="preset1">Preset 1</button>
-      <button id="preset2">Preset 2</button>
-      <button id="preset3">Preset 3</button>
-    </div>
-    
-    <div class="control-group">
-      <h4>Tree Structure</h4>
-      <div class="control-row">
-        <span class="control-label">Max Depth:</span>
-        <span class="control-value" id="maxDepthValue">7</span>
-        <input type="range" id="maxDepth" min="3" max="15" value="7">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Start Depth:</span>
-        <span class="control-value" id="startDepthValue">2</span>
-        <input type="range" id="startDepth" min="1" max="5" value="2">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Branch Angle:</span>
-        <span class="control-value" id="branchAngleValue">35°</span>
-        <input type="range" id="branchAngle" min="10" max="80" value="35">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Auto-Change Angle:</span>
-        <input type="checkbox" id="autoAngle" checked>
-      </div>
-      <div class="control-row">
-        <span class="control-label">Angle Change Speed:</span>
-        <span class="control-value" id="angleSpeedValue">0.3</span>
-        <input type="range" id="angleSpeed" min="0.1" max="3" step="0.1" value="0.3">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Scale Factor:</span>
-        <span class="control-value" id="scaleFactorValue">0.7</span>
-        <input type="range" id="scaleFactor" min="0.5" max="0.9" step="0.05" value="0.7">
-      </div>
-    </div>
-    
-    <!-- Rotation Control Group -->
-    <div class="control-group">
-      <h4>Rotation</h4>
-      <div class="control-row">
-        <span class="control-label">X-Axis Rotation:</span>
-        <span class="control-value" id="rotationXValue">0°</span>
-        <input type="range" id="rotationX" min="-180" max="180" value="0">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Y-Axis Rotation:</span>
-        <span class="control-value" id="rotationYValue">0°</span>
-        <input type="range" id="rotationY" min="-180" max="180" value="0">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Z-Axis Rotation:</span>
-        <span class="control-value" id="rotationZValue">0°</span>
-        <input type="range" id="rotationZ" min="-180" max="180" value="0">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Auto-Rotate:</span>
-        <input type="checkbox" id="autoRotate" checked>
-      </div>
-      <div class="control-row">
-        <span class="control-label">Rotation Speed:</span>
-        <span class="control-value" id="rotationSpeedValue">0.7</span>
-        <input type="range" id="rotationSpeed" min="0.1" max="5" step="0.1" value="0.7">
-      </div>
-    </div>
-    
-    <div class="control-group">
-      <h4>Animation</h4>
-      <div class="control-row">
-        <span class="control-label">Max Zoom:</span>
-        <span class="control-value" id="maxZoomValue">6.0</span>
-        <input type="range" id="maxZoom" min="1" max="10" step="0.1" value="6.0">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Zoom Speed:</span>
-        <span class="control-value" id="zoomSpeedValue">0.1</span>
-        <input type="range" id="zoomSpeed" min="0.01" max="0.5" step="0.01" value="0.1">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Growth Start:</span>
-        <span class="control-value" id="growthStartValue">2%</span>
-        <input type="range" id="growthStart" min="0" max="50" value="2">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Growth End:</span>
-        <span class="control-value" id="growthEndValue">100%</span>
-        <input type="range" id="growthEnd" min="50" max="100" value="100">
-      </div>
-    </div>
-    
-    <div class="control-group">
-      <h4>Colors</h4>
-      <div class="control-row">
-        <span class="control-label">Base Color:</span>
-        <input type="color" id="baseColor" value="#142864">
-        <span class="color-preview" style="background-color: #142864;"></span>
-      </div>
-      <div class="control-row">
-        <span class="control-label">Main Brand Color:</span>
-        <input type="color" id="brandColor" value="#F04E23">
-        <span class="color-preview" style="background-color: #F04E23;"></span>
-      </div>
-      <div class="control-row">
-        <span class="control-label">Fill Type:</span>
-        <select id="fillType">
-          <option value="gradient">Gradient</option>
-          <option value="solid">Solid</option>
-          <option value="outline">Outline Only</option>
-        </select>
-      </div>
-      <div class="control-row">
-        <span class="control-label">Stroke Weight:</span>
-        <span class="control-value" id="strokeWeightValue">4</span>
-        <input type="range" id="strokeWeight" min="1" max="5" value="4">
-      </div>
-    </div>
-    
-    <div class="control-group">
-      <h4>Position & Size</h4>
-      <div class="control-row">
-        <span class="control-label">X Position:</span>
-        <span class="control-value" id="xPositionValue">50%</span>
-        <input type="range" id="xPosition" min="10" max="90" value="50">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Y Position:</span>
-        <span class="control-value" id="yPositionValue">50%</span>
-        <input type="range" id="yPosition" min="10" max="90" value="50">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Z Position:</span>
-        <span class="control-value" id="zPositionValue">0</span>
-        <input type="range" id="zPosition" min="-200" max="200" value="0">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Auto-Move:</span>
-        <input type="checkbox" id="autoMove" checked>
-      </div>
-      <div class="control-row">
-        <span class="control-label">Movement Speed:</span>
-        <span class="control-value" id="moveSpeedValue">0.1</span>
-        <input type="range" id="moveSpeed" min="0.1" max="3" step="0.1" value="0.1">
-      </div>
-      <div class="control-row">
-        <span class="control-label">Starting Size:</span>
-        <span class="control-value" id="startingSizeValue">120</span>
-        <input type="range" id="startingSize" min="50" max="200" value="120">
-      </div>
-    </div>
-    
-    <div class="metrics" id="metrics">
-      <h4>Debug Information</h4>
-      Current Depth: 2/12<br>
-      Squares Drawn: 0<br>
-      Render Time: 0ms<br>
-      Zoom Factor: 1.00x<br>
-      Scroll Progress: 0.0%<br>
-      Branch Angle: 45°<br>
-      Rotation X: 0°<br>
-      Rotation Y: 0°
-    </div>
-  </div>
-
-  <script>
-    // Global p5.js instance
-    let p5Instance;
-
-    // Create a new p5 instance with our sketch
-    window.addEventListener('load', function() {
-      p5Instance = new p5(sketch);
-    });
-
-    // Define the sketch
-    function sketch(p) {
-      // ===== Configurable Settings =====
-      let config = {
-        // Tree Structure
-        maxDepth: 7,
-        startDepth: 2,
-        branchAngle: 35,
-        autoAngle: true,
-        angleSpeed: 0.3,
-        anglePhase: 0,
-        scaleFactor: 0.7,
-        
-        // Rotation Settings
-        rotationX: 0,
-        rotationY: 0,
-        rotationZ: 0,
-        autoRotate: true,
-        rotationSpeed: 0.7,
-        
-        // Animation
-        maxZoom: 6.0,
-        zoomSpeed: 0.1,
-        growthStart: 2, // % scroll when tree starts growing
-        growthEnd: 100, // % scroll when tree reaches max depth
-        
-        // Colors
-        baseColor: [20, 40, 100], // Navy Blue #142864
-        brandColor: [240, 78, 35], // Boxcurve Orange #F04E23
-        fillType: 'outline',
-        strokeWeight: 4,
-        
-        // Position and Size
-        xPosition: 50, // percent of screen width
-        yPosition: 50, // percent of screen height
-        zPosition: 0,  // z-position in 3D space
-        autoMove: true,
-        moveSpeed: 0.1,
-        movePhase: 0,  // Used for cyclic movement patterns
-        startingSize: 120
-      };
+    <div id="controlPanel" style="display: none;">
+      <button class="hide-panel" id="hidePanel">Hide Controls</button>
+      <h3>Boxcurve Tree Control Panel</h3>
       
-      // ===== Runtime Variables =====
-      let needsUpdate = true;
-      let lastScrollY = 0;
-      let lastMouseX, lastMouseY;
-      let currentDepth = config.startDepth;
-      let mirror = false;
-      let zoomFactor = 1.0;
-      let targetZoom = 1.0;
-      let renderTime = 0;
-      let squaresDrawn = 0;
-      let lastFrameTime = 0;
+      <div class="presets">
+        <button id="preset1">Preset 1</button>
+        <button id="preset2">Preset 2</button>
+        <button id="preset3">Preset 3</button>
+      </div>
       
-      // Define intermediate colors for gradient
-      const intermediateColors = [
-        config.baseColor,
-        [80, 30, 80],  // Purple
-        [120, 40, 70], // Maroon
-        [180, 60, 60], // Dark Red
-        config.brandColor
-      ];
+      <div class="control-group">
+        <h4>Tree Structure</h4>
+        <div class="control-row">
+          <span class="control-label">Max Depth:</span>
+          <span class="control-value" id="maxDepthValue">7</span>
+          <input type="number" id="maxDepthNumber" min="3" max="15" value="7" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="maxDepth" min="3" max="15" value="7">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Start Depth:</span>
+          <span class="control-value" id="startDepthValue">2</span>
+          <input type="number" id="startDepthNumber" min="1" max="5" value="2" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="startDepth" min="1" max="5" value="2">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Branch Angle:</span>
+          <span class="control-value" id="branchAngleValue">35°</span>
+          <input type="number" id="branchAngleNumber" min="10" max="80" value="35" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="branchAngle" min="10" max="80" value="35">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Auto-Change Angle:</span>
+          <input type="checkbox" id="autoAngle" checked>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Angle Change Speed:</span>
+          <span class="control-value" id="angleSpeedValue">0.3</span>
+          <input type="number" id="angleSpeedNumber" min="0.1" max="3" step="0.1" value="0.3" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="angleSpeed" min="0.1" max="3" step="0.1" value="0.3">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Scale Factor:</span>
+          <span class="control-value" id="scaleFactorValue">0.7</span>
+          <input type="number" id="scaleFactorNumber" min="0.5" max="0.9" step="0.05" value="0.7" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="scaleFactor" min="0.5" max="0.9" step="0.05" value="0.7">
+        </div>
+      </div>
       
-      p.setup = function() {
-        const canvas = p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
-        canvas.id('treeCanvas');
-        
-        // Initialize mouse position
-        lastMouseX = p.mouseX;
-        lastMouseY = p.mouseY;
-        lastFrameTime = p.millis();
-        
-        // Set up control panel event listeners
-        setupControlPanel();
-        
-        // Set up panel visibility event listeners
-        document.getElementById('hidePanel').addEventListener('click', function() {
-          console.log('Hide panel clicked');
-          document.getElementById('controlPanel').style.display = 'none';
-          document.getElementById('showPanel').style.display = 'block';
-        });
-        
-        document.getElementById('showPanel').addEventListener('click', function() {
-          console.log('Show panel clicked');
-          document.getElementById('controlPanel').style.display = 'block';
-          document.getElementById('showPanel').style.display = 'none';
-        });
-        
-        // Force first update
-        needsUpdate = true;
-        
-        // Explicitly console log that initialization is complete
-        console.log("Boxcurve Tree setup complete");
-      };
+      <!-- Rotation Control Group -->
+      <div class="control-group">
+        <h4>Rotation</h4>
+        <div class="control-row">
+          <span class="control-label">X-Axis Rotation:</span>
+          <span class="control-value" id="rotationXValue">0°</span>
+          <input type="number" id="rotationXNumber" min="-180" max="180" value="0" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="rotationX" min="-180" max="180" value="0">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Y-Axis Rotation:</span>
+          <span class="control-value" id="rotationYValue">0°</span>
+          <input type="number" id="rotationYNumber" min="-180" max="180" value="0" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="rotationY" min="-180" max="180" value="0">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Z-Axis Rotation:</span>
+          <span class="control-value" id="rotationZValue">0°</span>
+          <input type="number" id="rotationZNumber" min="-180" max="180" value="0" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="rotationZ" min="-180" max="180" value="0">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Auto-Rotate:</span>
+          <input type="checkbox" id="autoRotate" checked>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Rotation Speed:</span>
+          <span class="control-value" id="rotationSpeedValue">0.7</span>
+          <input type="number" id="rotationSpeedNumber" min="0.1" max="5" step="0.1" value="0.7" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="rotationSpeed" min="0.1" max="5" step="0.1" value="0.7">
+        </div>
+      </div>
       
-      p.draw = function() {
-        // Check for auto-rotation
-        const currentTime = p.millis();
-        const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
-        lastFrameTime = currentTime;
-        
-        // Update auto-rotation, auto-movement, and auto-angle if enabled
-        if (config.autoRotate || config.autoMove || config.autoAngle) {
-          if (config.autoRotate) {
-            // Rotate primarily around Y axis, but also slightly around Z for a more interesting effect
-            config.rotationY += config.rotationSpeed * deltaTime * 15;
-            config.rotationZ += config.rotationSpeed * deltaTime * 5;
-            
-            // Keep angles within -180 to 180 range
-            if (config.rotationY > 180) config.rotationY -= 360;
-            if (config.rotationZ > 180) config.rotationZ -= 360;
-            
-            // Update UI sliders to reflect current rotation values
-            document.getElementById('rotationY').value = config.rotationY;
-            document.getElementById('rotationYValue').textContent = Math.round(config.rotationY) + '°';
-            
-            document.getElementById('rotationZ').value = config.rotationZ;
-            document.getElementById('rotationZValue').textContent = Math.round(config.rotationZ) + '°';
-          }
+      <div class="control-group">
+        <h4>Animation</h4>
+        <div class="control-row">
+          <span class="control-label">Max Zoom:</span>
+          <span class="control-value" id="maxZoomValue">6.0</span>
+          <input type="number" id="maxZoomNumber" min="1" max="10" step="0.1" value="6.0" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="maxZoom" min="1" max="10" step="0.1" value="6.0">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Zoom Speed:</span>
+          <span class="control-value" id="zoomSpeedValue">0.1</span>
+          <input type="number" id="zoomSpeedNumber" min="0.01" max="0.5" step="0.01" value="0.1" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="zoomSpeed" min="0.01" max="0.5" step="0.01" value="0.1">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Growth Start:</span>
+          <span class="control-value" id="growthStartValue">2%</span>
+          <input type="number" id="growthStartNumber" min="0" max="50" value="2" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="growthStart" min="0" max="50" value="2">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Growth End:</span>
+          <span class="control-value" id="growthEndValue">100%</span>
+          <input type="number" id="growthEndNumber" min="50" max="100" value="100" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="growthEnd" min="50" max="100" value="100">
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <h4>Colors</h4>
+        <div class="control-row">
+          <span class="control-label">Base Color:</span>
+          <input type="color" id="baseColor" value="#142864">
+          <span class="color-preview" style="background-color: #142864;"></span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Main Brand Color:</span>
+          <input type="color" id="brandColor" value="#F04E23">
+          <span class="color-preview" style="background-color: #F04E23;"></span>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Fill Type:</span>
+          <select id="fillType">
+            <option value="gradient">Gradient</option>
+            <option value="solid">Solid</option>
+            <option value="outline">Outline Only</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Stroke Weight:</span>
+          <span class="control-value" id="strokeWeightValue">4</span>
+          <input type="range" id="strokeWeight" min="1" max="5" value="4">
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <h4>Position & Size</h4>
+        <div class="control-row">
+          <span class="control-label">X Position:</span>
+          <span class="control-value" id="xPositionValue">50%</span>
+          <input type="number" id="xPositionNumber" min="10" max="90" value="50" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="xPosition" min="10" max="90" value="50">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Y Position:</span>
+          <span class="control-value" id="yPositionValue">50%</span>
+          <input type="number" id="yPositionNumber" min="10" max="90" value="50" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="yPosition" min="10" max="90" value="50">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Z Position:</span>
+          <span class="control-value" id="zPositionValue">0</span>
+          <input type="number" id="zPositionNumber" min="-200" max="200" value="0" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="zPosition" min="-200" max="200" value="0">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Auto-Move:</span>
+          <input type="checkbox" id="autoMove" checked>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Movement Speed:</span>
+          <span class="control-value" id="moveSpeedValue">0.1</span>
+          <input type="number" id="moveSpeedNumber" min="0.1" max="3" step="0.1" value="0.1" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="moveSpeed" min="0.1" max="3" step="0.1" value="0.1">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Starting Size:</span>
+          <span class="control-value" id="startingSizeValue">120</span>
+          <input type="number" id="startingSizeNumber" min="50" max="200" value="120" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="startingSize" min="50" max="200" value="120">
+        </div>
+      </div>
+      
+      <div class="metrics" id="metrics">
+        <h4>Debug Information</h4>
+        Current Depth: 2/12<br>
+        Squares Drawn: 0<br>
+        Render Time: 0ms<br>
+        Zoom Factor: 1.00x<br>
+        Scroll Progress: 0.0%<br>
+        Branch Angle: 45°<br>
+        Rotation X: 0°<br>
+        Rotation Y: 0°
+      </div>
+    </div>
+
+    <script>
+      // Global p5.js instance
+      let p5Instance;
+
+      // Create a new p5 instance with our sketch
+      window.addEventListener('load', function() {
+        p5Instance = new p5(sketch);
+      });
+
+      // Define the sketch
+      function sketch(p) {
+        // ===== Configurable Settings =====
+        let config = {
+          // Tree Structure
+          maxDepth: 7,
+          startDepth: 2,
+          branchAngle: 35,
+          autoAngle: true,
+          angleSpeed: 0.3,
+          anglePhase: 0,
+          scaleFactor: 0.7,
           
-          if (config.autoMove) {
-            // Update movement phase
-            config.movePhase += config.moveSpeed * deltaTime;
-            if (config.movePhase > Math.PI * 2) config.movePhase -= Math.PI * 2;
-            
-            // Create smooth movement patterns
-            const xRange = 30; // Range of movement in percentage
-            const yRange = 20;
-            const zRange = 100;
-            
-            // Calculate new positions using sine and cosine for smooth orbiting motion
-            const newX = 50 + xRange * Math.sin(config.movePhase);
-            const newY = 50 + yRange * Math.cos(config.movePhase * 0.7);
-            const newZ = zRange * Math.sin(config.movePhase * 0.5);
-            
-            // Apply new positions
-            config.xPosition = newX;
-            config.yPosition = newY;
-            config.zPosition = newZ;
-            
-            // Update UI sliders to reflect current position values
-            document.getElementById('xPosition').value = Math.round(newX);
-            document.getElementById('xPositionValue').textContent = Math.round(newX) + '%';
-            
-            document.getElementById('yPosition').value = Math.round(newY);
-            document.getElementById('yPositionValue').textContent = Math.round(newY) + '%';
-            
-            document.getElementById('zPosition').value = Math.round(newZ);
-            document.getElementById('zPositionValue').textContent = Math.round(newZ);
-          }
+          // Rotation Settings
+          rotationX: 0,
+          rotationY: 0,
+          rotationZ: 0,
+          autoRotate: true,
+          rotationSpeed: 0.7,
           
-          if (config.autoAngle) {
-            // Update angle phase
-            config.anglePhase += config.angleSpeed * deltaTime;
-            if (config.anglePhase > Math.PI * 2) config.anglePhase -= Math.PI * 2;
-            
-            // Create smooth angle oscillation between min and max values
-            const minAngle = 15;
-            const maxAngle = 75;
-            const range = maxAngle - minAngle;
-            
-            // Use sine wave to smoothly oscillate between min and max angle
-            const newAngle = minAngle + range * (0.5 + 0.5 * Math.sin(config.anglePhase));
-            
-            // Apply new angle
-            config.branchAngle = newAngle;
-            
-            // Update UI slider to reflect current angle value
-            document.getElementById('branchAngle').value = Math.round(newAngle);
-            document.getElementById('branchAngleValue').textContent = Math.round(newAngle) + '°';
-          }
+          // Animation
+          maxZoom: 6.0,
+          zoomSpeed: 0.1,
+          growthStart: 2, // % scroll when tree starts growing
+          growthEnd: 100, // % scroll when tree reaches max depth
           
+          // Colors
+          baseColor: [20, 40, 100], // Navy Blue #142864
+          brandColor: [240, 78, 35], // Boxcurve Orange #F04E23
+          fillType: 'outline',
+          strokeWeight: 4,
+          
+          // Position and Size
+          xPosition: 50, // percent of screen width
+          yPosition: 50, // percent of screen height
+          zPosition: 0,  // z-position in 3D space
+          autoMove: true,
+          moveSpeed: 0.1,
+          movePhase: 0,  // Used for cyclic movement patterns
+          startingSize: 120
+        };
+        
+        // ===== Runtime Variables =====
+        let needsUpdate = true;
+        let lastScrollY = 0;
+        let lastMouseX, lastMouseY;
+        let currentDepth = config.startDepth;
+        let mirror = false;
+        let zoomFactor = 1.0;
+        let targetZoom = 1.0;
+        let renderTime = 0;
+        let squaresDrawn = 0;
+        let lastFrameTime = 0;
+        
+        // Define intermediate colors for gradient
+        const intermediateColors = [
+          config.baseColor,
+          [80, 30, 80],  // Purple
+          [120, 40, 70], // Maroon
+          [180, 60, 60], // Dark Red
+          config.brandColor
+        ];
+        
+        p.setup = function() {
+          const canvas = p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
+          canvas.id('treeCanvas');
+          
+          // Initialize mouse position
+          lastMouseX = p.mouseX;
+          lastMouseY = p.mouseY;
+          lastFrameTime = p.millis();
+          
+          // Set up control panel event listeners
+          setupControlPanel();
+          
+          // Set up panel visibility event listeners
+          document.getElementById('hidePanel').addEventListener('click', function() {
+            console.log('Hide panel clicked');
+            document.getElementById('controlPanel').style.display = 'none';
+            document.getElementById('showPanel').style.display = 'block';
+          });
+          
+          document.getElementById('showPanel').addEventListener('click', function() {
+            console.log('Show panel clicked');
+            document.getElementById('controlPanel').style.display = 'block';
+            document.getElementById('showPanel').style.display = 'none';
+          });
+          
+          // Force first update
           needsUpdate = true;
-        }
+          
+          // Explicitly console log that initialization is complete
+          console.log("Boxcurve Tree setup complete");
+        };
         
-        if (!needsUpdate) return;
-        
-        const startTime = performance.now();
-        squaresDrawn = 0;
-        
-        p.clear();
-        
-        // Map scroll position to determine depth and zoom
-        const scrollProgress = p.constrain(window.scrollY / (document.body.scrollHeight - p.windowHeight), 0, 1);
-        
-        // Calculate the effective scroll progress for tree growth
-        const growthRange = config.growthEnd - config.growthStart;
-        const normalizedScrollProgress = p.constrain(
-          p.map(scrollProgress * 100, config.growthStart, config.growthEnd, 0, 1), 
-          0, 
-          1
-        );
-        
-        // Map normalized scroll progress to determine depth
-        currentDepth = p.floor(p.map(normalizedScrollProgress, 0, 1, config.startDepth, config.maxDepth));
-        
-        // Calculate target zoom based on scroll
-        targetZoom = p.map(scrollProgress, 0, 1, 1.0, config.maxZoom);
-        
-        // Smoothly adjust zoom
-        zoomFactor += (targetZoom - zoomFactor) * config.zoomSpeed;
-        
-        p.push();
-        
-        // Calculate the position in screen coordinates
-        const xPos = p.map(config.xPosition, 0, 100, -p.width/2, p.width/2);
-        const yPos = p.map(config.yPosition, 0, 100, -p.height/2, p.height/2);
-        
-        // Apply position
-        p.translate(xPos, yPos, config.zPosition);
-        
-        // Apply rotations
-        p.rotateX(p.radians(config.rotationX));
-        p.rotateY(p.radians(config.rotationY));
-        p.rotateZ(p.radians(config.rotationZ));
-        
-        // Scale based on zoom factor
-        p.scale(zoomFactor);
-        
-        // Draw the tree
-        drawBoxcurveTree(0, 0, config.startingSize, currentDepth, scrollProgress);
-        
-        p.pop();
-        
-        // Update render time
-        renderTime = performance.now() - startTime;
-        
-        // Update metrics in the control panel
-        updateMetrics(scrollProgress);
-        
-        // Mark update as complete
-        needsUpdate = false;
-        
-        // Log success
-        if (squaresDrawn > 0) {
-          console.log(`Frame rendered with ${squaresDrawn} squares`);
-        }
-      };
-      
-      function drawBoxcurveTree(x, y, size, depth, scrollProgress) {
-        p.push();
-        p.translate(x, y);
-        
-        if (depth > 0) {
-          const p1 = [-size / 2, -size / 2];
-          const p2 = [size / 2, -size / 2];
-          generateTree([p1, p2], 0, depth, scrollProgress);
-        }
-        
-        p.pop();
-      }
-      
-      function generateTree(coordSet, depth, maxDepth, scrollProgress) {
-        if (depth >= maxDepth) return;
-        
-        const p1 = coordSet[0];
-        const p2 = coordSet[1];
-        
-        // Draw the cube (square)
-        const cubeCoordSet = drawCube(p1, p2, depth, scrollProgress);
-        
-        // Calculate next squares
-        const size = p.dist(p1[0], p1[1], p2[0], p2[1]);
-        const nextSize = size * config.scaleFactor;
-        
-        // Draw the triangle for branch connection
-        const triangleCoordSets = drawTriangle(cubeCoordSet[0], cubeCoordSet[1], depth, config.branchAngle, mirror, scrollProgress);
-        
-        // Continue with recursion for next branches
-        for (let nextCoordSet of triangleCoordSets) {
-          generateTree(nextCoordSet, depth + 1, maxDepth, scrollProgress);
-        }
-      }
-      
-      function drawCube(p1, p2, depth, scrollProgress) {
-        // Calculate the other two points of the square
-        const p1_to_p2 = [p1[0] - p2[0], p1[1] - p2[1]];
-        const p1_to_p4 = [-p1_to_p2[1], p1_to_p2[0]];
-        
-        const p3 = [p2[0] + p1_to_p4[0], p2[1] + p1_to_p4[1]];
-        const p4 = [p1[0] + p1_to_p4[0], p1[1] + p1_to_p4[1]];
-        
-        // Get style based on settings
-        const style = getStyle(depth, "cube", scrollProgress);
-        
-        // Draw the square in 3D space
-        p.beginShape();
-        
-        // Set fill color if specified
-        if (style.fill) {
-          p.fill(style.fill[0], style.fill[1], style.fill[2]);
-        } else {
-          p.noFill();
-        }
-        
-        // Set stroke if specified
-        if (style.outline) {
-          if (style.outline.length > 3) {
-            p.stroke(style.outline[0], style.outline[1], style.outline[2], style.outline[3]);
-          } else {
-            p.stroke(style.outline[0], style.outline[1], style.outline[2]);
-          }
-          p.strokeWeight(config.strokeWeight);
-        } else {
-          p.noStroke();
-        }
-        
-        // Draw the square as a flat plane in 3D space
-        p.vertex(p1[0], p1[1], 0);
-        p.vertex(p2[0], p2[1], 0);
-        p.vertex(p3[0], p3[1], 0);
-        p.vertex(p4[0], p4[1], 0);
-        p.endShape(p.CLOSE);
-        
-        squaresDrawn++;
-        
-        return [p3, p4];
-      }
-      
-      function drawTriangle(p1, p2, depth, angle, mirror, scrollProgress) {
-        // Convert angle to radians
-        let angle1 = p.PI * ((90 - angle) / 180);
-        let angle2 = p.PI * (angle / 180);
-        
-        if (mirror) {
-          [angle1, angle2] = [angle2, angle1];
-        }
-        
-        const angle3 = p.PI - angle1 - angle2;
-        
-        // Calculate vectors and lengths
-        const p1_to_p2 = [p2[0] - p1[0], p2[1] - p1[1]];
-        const length_p1_to_p2 = Math.sqrt(p1_to_p2[0] * p1_to_p2[0] + p1_to_p2[1] * p1_to_p2[1]);
-        const length_p1_to_p3 = length_p1_to_p2 * Math.sin(angle2) / Math.sin(angle3);
-        
-        const x = p1_to_p2[0];
-        const y = p1_to_p2[1];
-        
-        // Calculate third point using the equations
-        const equation_1 = p1[0] * x + p1[1] * y + length_p1_to_p3 * length_p1_to_p2 * Math.cos(angle1);
-        const equation_2 = p2[1] * x - p2[0] * y + length_p1_to_p3 * length_p1_to_p2 * Math.sin(angle1);
-        
-        const factor = 1 / (length_p1_to_p2 * length_p1_to_p2);
-        const x3 = factor * (x * equation_1 - y * equation_2);
-        const y3 = factor * (y * equation_1 + x * equation_2);
-        
-        const p3 = [x3, y3];
-        
-        // Return the coordinates for the next branches
-        return [[p3, p1], [p2, p3]];
-      }
-      
-      function getStyle(depth, shape, scrollProgress) {
-        // Determine color based on depth and settings
-        let fillColor, outlineColor;
-        
-        switch(config.fillType) {
-          case 'outline':
-            // Just outlines, no fill
-            fillColor = null;
-            outlineColor = config.brandColor;
-            break;
-            
-          case 'solid':
-            // Solid fill based on depth
-            fillColor = (depth === 0) ? config.baseColor : config.brandColor;
-            outlineColor = null;
-            break;
-            
-          case 'gradient':
-          default:
-            // Gradient fill based on depth
-            const colorIndex = p.constrain(p.map(depth, 0, config.maxDepth, 0, intermediateColors.length - 1), 0, intermediateColors.length - 1);
-            const lowerIndex = p.floor(colorIndex);
-            const upperIndex = p.ceil(colorIndex);
-            const blendFactor = colorIndex - lowerIndex;
-            
-            if (lowerIndex === upperIndex) {
-              fillColor = intermediateColors[lowerIndex];
-            } else {
-              // Blend between colors
-              fillColor = [
-                p.lerp(intermediateColors[lowerIndex][0], intermediateColors[upperIndex][0], blendFactor),
-                p.lerp(intermediateColors[lowerIndex][1], intermediateColors[upperIndex][1], blendFactor),
-                p.lerp(intermediateColors[lowerIndex][2], intermediateColors[upperIndex][2], blendFactor)
-              ];
+        p.draw = function() {
+          // Check for auto-rotation
+          const currentTime = p.millis();
+          const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
+          lastFrameTime = currentTime;
+          
+          // Update auto-rotation, auto-movement, and auto-angle if enabled
+          if (config.autoRotate || config.autoMove || config.autoAngle) {
+            if (config.autoRotate) {
+              // Rotate primarily around Y axis, but also slightly around Z for a more interesting effect
+              config.rotationY += config.rotationSpeed * deltaTime * 15;
+              config.rotationZ += config.rotationSpeed * deltaTime * 5;
+              
+              // Keep angles within -180 to 180 range
+              if (config.rotationY > 180) config.rotationY -= 360;
+              if (config.rotationZ > 180) config.rotationZ -= 360;
+              
+              // Update UI sliders to reflect current rotation values
+              document.getElementById('rotationY').value = config.rotationY;
+              document.getElementById('rotationYValue').textContent = Math.round(config.rotationY) + '°';
+              
+              document.getElementById('rotationZ').value = config.rotationZ;
+              document.getElementById('rotationZValue').textContent = Math.round(config.rotationZ) + '°';
             }
             
-            // Progressively remove outline as we scroll
-            const outlineOpacity = p.map(scrollProgress, 0.3, 0.7, 255, 0);
-            outlineColor = (outlineOpacity > 0) ? [...config.brandColor, outlineOpacity] : null;
-            break;
+            if (config.autoMove) {
+              // Update movement phase
+              config.movePhase += config.moveSpeed * deltaTime;
+              if (config.movePhase > Math.PI * 2) config.movePhase -= Math.PI * 2;
+              
+              // Create smooth movement patterns
+              const xRange = 30; // Range of movement in percentage
+              const yRange = 20;
+              const zRange = 100;
+              
+              // Calculate new positions using sine and cosine for smooth orbiting motion
+              const newX = 50 + xRange * Math.sin(config.movePhase);
+              const newY = 50 + yRange * Math.cos(config.movePhase * 0.7);
+              const newZ = zRange * Math.sin(config.movePhase * 0.5);
+              
+              // Apply new positions
+              config.xPosition = newX;
+              config.yPosition = newY;
+              config.zPosition = newZ;
+              
+              // Update UI sliders to reflect current position values
+              document.getElementById('xPosition').value = Math.round(newX);
+              document.getElementById('xPositionValue').textContent = Math.round(newX) + '%';
+              
+              document.getElementById('yPosition').value = Math.round(newY);
+              document.getElementById('yPositionValue').textContent = Math.round(newY) + '%';
+              
+              document.getElementById('zPosition').value = Math.round(newZ);
+              document.getElementById('zPositionValue').textContent = Math.round(newZ);
+            }
+            
+            if (config.autoAngle) {
+              // Update angle phase
+              config.anglePhase += config.angleSpeed * deltaTime;
+              if (config.anglePhase > Math.PI * 2) config.anglePhase -= Math.PI * 2;
+              
+              // Create smooth angle oscillation between min and max values
+              const minAngle = 15;
+              const maxAngle = 75;
+              const range = maxAngle - minAngle;
+              
+              // Use sine wave to smoothly oscillate between min and max angle
+              const newAngle = minAngle + range * (0.5 + 0.5 * Math.sin(config.anglePhase));
+              
+              // Apply new angle
+              config.branchAngle = newAngle;
+              
+              // Update UI slider to reflect current angle value
+              document.getElementById('branchAngle').value = Math.round(newAngle);
+              document.getElementById('branchAngleValue').textContent = Math.round(newAngle) + '°';
+            }
+            
+            needsUpdate = true;
+          }
+          
+          if (!needsUpdate) return;
+          
+          const startTime = performance.now();
+          squaresDrawn = 0;
+          
+          p.clear();
+          
+          // Map scroll position to determine depth and zoom
+          const scrollProgress = p.constrain(window.scrollY / (document.body.scrollHeight - p.windowHeight), 0, 1);
+          
+          // Calculate the effective scroll progress for tree growth
+          const growthRange = config.growthEnd - config.growthStart;
+          const normalizedScrollProgress = p.constrain(
+            p.map(scrollProgress * 100, config.growthStart, config.growthEnd, 0, 1), 
+            0, 
+            1
+          );
+          
+          // Map normalized scroll progress to determine depth
+          currentDepth = p.floor(p.map(normalizedScrollProgress, 0, 1, config.startDepth, config.maxDepth));
+          
+          // Calculate target zoom based on scroll
+          targetZoom = p.map(scrollProgress, 0, 1, 1.0, config.maxZoom);
+          
+          // Smoothly adjust zoom
+          zoomFactor += (targetZoom - zoomFactor) * config.zoomSpeed;
+          
+          p.push();
+          
+          // Calculate the position in screen coordinates
+          const xPos = p.map(config.xPosition, 0, 100, -p.width/2, p.width/2);
+          const yPos = p.map(config.yPosition, 0, 100, -p.height/2, p.height/2);
+          
+          // Apply position
+          p.translate(xPos, yPos, config.zPosition);
+          
+          // Apply rotations
+          p.rotateX(p.radians(config.rotationX));
+          p.rotateY(p.radians(config.rotationY));
+          p.rotateZ(p.radians(config.rotationZ));
+          
+          // Scale based on zoom factor
+          p.scale(zoomFactor);
+          
+          // Draw the tree
+          drawBoxcurveTree(0, 0, config.startingSize, currentDepth, scrollProgress);
+          
+          p.pop();
+          
+          // Update render time
+          renderTime = performance.now() - startTime;
+          
+          // Update metrics in the control panel
+          updateMetrics(scrollProgress);
+          
+          // Mark update as complete
+          needsUpdate = false;
+          
+          // Log success
+          if (squaresDrawn > 0) {
+            console.log(`Frame rendered with ${squaresDrawn} squares`);
+          }
+        };
+        
+        function drawBoxcurveTree(x, y, size, depth, scrollProgress) {
+          p.push();
+          p.translate(x, y);
+          
+          if (depth > 0) {
+            const p1 = [-size / 2, -size / 2];
+            const p2 = [size / 2, -size / 2];
+            generateTree([p1, p2], 0, depth, scrollProgress);
+          }
+          
+          p.pop();
         }
         
-        return {
-          fill: fillColor,
-          outline: outlineColor
+        function generateTree(coordSet, depth, maxDepth, scrollProgress) {
+          if (depth >= maxDepth) return;
+          
+          const p1 = coordSet[0];
+          const p2 = coordSet[1];
+          
+          // Draw the cube (square)
+          const cubeCoordSet = drawCube(p1, p2, depth, scrollProgress);
+          
+          // Calculate next squares
+          const size = p.dist(p1[0], p1[1], p2[0], p2[1]);
+          const nextSize = size * config.scaleFactor;
+          
+          // Draw the triangle for branch connection
+          const triangleCoordSets = drawTriangle(cubeCoordSet[0], cubeCoordSet[1], depth, config.branchAngle, mirror, scrollProgress);
+          
+          // Continue with recursion for next branches
+          for (let nextCoordSet of triangleCoordSets) {
+            generateTree(nextCoordSet, depth + 1, maxDepth, scrollProgress);
+          }
+        }
+        
+        function drawCube(p1, p2, depth, scrollProgress) {
+          // Calculate the other two points of the square
+          const p1_to_p2 = [p1[0] - p2[0], p1[1] - p2[1]];
+          const p1_to_p4 = [-p1_to_p2[1], p1_to_p2[0]];
+          
+          const p3 = [p2[0] + p1_to_p4[0], p2[1] + p1_to_p4[1]];
+          const p4 = [p1[0] + p1_to_p4[0], p1[1] + p1_to_p4[1]];
+          
+          // Get style based on settings
+          const style = getStyle(depth, "cube", scrollProgress);
+          
+          // Draw the square in 3D space
+          p.beginShape();
+          
+          // Set fill color if specified
+          if (style.fill) {
+            p.fill(style.fill[0], style.fill[1], style.fill[2]);
+          } else {
+            p.noFill();
+          }
+          
+          // Set stroke if specified
+          if (style.outline) {
+            if (style.outline.length > 3) {
+              p.stroke(style.outline[0], style.outline[1], style.outline[2], style.outline[3]);
+            } else {
+              p.stroke(style.outline[0], style.outline[1], style.outline[2]);
+            }
+            p.strokeWeight(config.strokeWeight);
+          } else {
+            p.noStroke();
+          }
+          
+          // Draw the square as a flat plane in 3D space
+          p.vertex(p1[0], p1[1], 0);
+          p.vertex(p2[0], p2[1], 0);
+          p.vertex(p3[0], p3[1], 0);
+          p.vertex(p4[0], p4[1], 0);
+          p.endShape(p.CLOSE);
+          
+          squaresDrawn++;
+          
+          return [p3, p4];
+        }
+        
+        function drawTriangle(p1, p2, depth, angle, mirror, scrollProgress) {
+          // Convert angle to radians
+          let angle1 = p.PI * ((90 - angle) / 180);
+          let angle2 = p.PI * (angle / 180);
+          
+          if (mirror) {
+            [angle1, angle2] = [angle2, angle1];
+          }
+          
+          const angle3 = p.PI - angle1 - angle2;
+          
+          // Calculate vectors and lengths
+          const p1_to_p2 = [p2[0] - p1[0], p2[1] - p1[1]];
+          const length_p1_to_p2 = Math.sqrt(p1_to_p2[0] * p1_to_p2[0] + p1_to_p2[1] * p1_to_p2[1]);
+          const length_p1_to_p3 = length_p1_to_p2 * Math.sin(angle2) / Math.sin(angle3);
+          
+          const x = p1_to_p2[0];
+          const y = p1_to_p2[1];
+          
+          // Calculate third point using the equations
+          const equation_1 = p1[0] * x + p1[1] * y + length_p1_to_p3 * length_p1_to_p2 * Math.cos(angle1);
+          const equation_2 = p2[1] * x - p2[0] * y + length_p1_to_p3 * length_p1_to_p2 * Math.sin(angle1);
+          
+          const factor = 1 / (length_p1_to_p2 * length_p1_to_p2);
+          const x3 = factor * (x * equation_1 - y * equation_2);
+          const y3 = factor * (y * equation_1 + x * equation_2);
+          
+          const p3 = [x3, y3];
+          
+          // Return the coordinates for the next branches
+          return [[p3, p1], [p2, p3]];
+        }
+        
+        function getStyle(depth, shape, scrollProgress) {
+          // Determine color based on depth and settings
+          let fillColor, outlineColor;
+          
+          switch(config.fillType) {
+            case 'outline':
+              // Just outlines, no fill
+              fillColor = null;
+              outlineColor = config.brandColor;
+              break;
+              
+            case 'solid':
+              // Solid fill based on depth
+              fillColor = (depth === 0) ? config.baseColor : config.brandColor;
+              outlineColor = null;
+              break;
+              
+            case 'gradient':
+            default:
+              // Gradient fill based on depth
+              const colorIndex = p.constrain(p.map(depth, 0, config.maxDepth, 0, intermediateColors.length - 1), 0, intermediateColors.length - 1);
+              const lowerIndex = p.floor(colorIndex);
+              const upperIndex = p.ceil(colorIndex);
+              const blendFactor = colorIndex - lowerIndex;
+              
+              if (lowerIndex === upperIndex) {
+                fillColor = intermediateColors[lowerIndex];
+              } else {
+                // Blend between colors
+                fillColor = [
+                  p.lerp(intermediateColors[lowerIndex][0], intermediateColors[upperIndex][0], blendFactor),
+                  p.lerp(intermediateColors[lowerIndex][1], intermediateColors[upperIndex][1], blendFactor),
+                  p.lerp(intermediateColors[lowerIndex][2], intermediateColors[upperIndex][2], blendFactor)
+                ];
+              }
+              
+              // Progressively remove outline as we scroll
+              const outlineOpacity = p.map(scrollProgress, 0.3, 0.7, 255, 0);
+              outlineColor = (outlineOpacity > 0) ? [...config.brandColor, outlineOpacity] : null;
+              break;
+          }
+          
+          return {
+            fill: fillColor,
+            outline: outlineColor
+          };
+        }
+        
+        p.windowResized = function() {
+          p.resizeCanvas(p.windowWidth, p.windowHeight);
+          needsUpdate = true;
         };
+        
+        function updateMetrics(scrollProgress) {
+          const metricsElem = document.getElementById('metrics');
+          
+          metricsElem.innerHTML = `
+            <h4>Debug Information</h4>
+            Current Depth: ${currentDepth}/${config.maxDepth}<br>
+            Squares Drawn: ${squaresDrawn}<br>
+            Render Time: ${renderTime.toFixed(2)}ms<br>
+            Zoom Factor: ${zoomFactor.toFixed(2)}x<br>
+            Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%<br>
+            Growth: ${config.growthStart}% to ${config.growthEnd}%<br>
+            Branch Angle: ${Math.round(config.branchAngle)}° (Auto: ${config.autoAngle ? "On" : "Off"})<br>
+            Position: X:${Math.round(config.xPosition)}%, Y:${Math.round(config.yPosition)}%, Z:${Math.round(config.zPosition)}<br>
+            Auto-Move: ${config.autoMove ? "On" : "Off"}<br>
+            Rotation X: ${Math.round(config.rotationX)}°<br>
+            Rotation Y: ${Math.round(config.rotationY)}°<br>
+            Rotation Z: ${Math.round(config.rotationZ)}°
+          `;
+        }
+        
+        // Event listeners
+        window.addEventListener('scroll', function() {
+          needsUpdate = true;
+          lastScrollY = window.scrollY;
+        });
+        
+        function setupControlPanel() {
+          // Tree Structure controls
+          document.getElementById('maxDepth').addEventListener('input', function() {
+            config.maxDepth = parseInt(this.value);
+            document.getElementById('maxDepthValue').textContent = this.value;
+            document.getElementById('maxDepthNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('maxDepthNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 3 && value <= 15) {
+              config.maxDepth = value;
+              document.getElementById('maxDepthValue').textContent = value;
+              document.getElementById('maxDepth').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('startDepth').addEventListener('input', function() {
+            config.startDepth = parseInt(this.value);
+            document.getElementById('startDepthValue').textContent = this.value;
+            document.getElementById('startDepthNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('startDepthNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 1 && value <= 5) {
+              config.startDepth = value;
+              document.getElementById('startDepthValue').textContent = value;
+              document.getElementById('startDepth').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('branchAngle').addEventListener('input', function() {
+            config.branchAngle = parseInt(this.value);
+            document.getElementById('branchAngleValue').textContent = this.value + '°';
+            document.getElementById('branchAngleNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('branchAngleNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 10 && value <= 80) {
+              config.branchAngle = value;
+              document.getElementById('branchAngleValue').textContent = value + '°';
+              document.getElementById('branchAngle').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('angleSpeed').addEventListener('input', function() {
+            config.angleSpeed = parseFloat(this.value);
+            document.getElementById('angleSpeedValue').textContent = this.value;
+            document.getElementById('angleSpeedNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('angleSpeedNumber').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (value >= 0.1 && value <= 3) {
+              config.angleSpeed = value;
+              document.getElementById('angleSpeedValue').textContent = value;
+              document.getElementById('angleSpeed').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('scaleFactor').addEventListener('input', function() {
+            config.scaleFactor = parseFloat(this.value);
+            document.getElementById('scaleFactorValue').textContent = this.value;
+            document.getElementById('scaleFactorNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('scaleFactorNumber').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (value >= 0.5 && value <= 0.9) {
+              config.scaleFactor = value;
+              document.getElementById('scaleFactorValue').textContent = value;
+              document.getElementById('scaleFactor').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          // Rotation controls
+          document.getElementById('rotationX').addEventListener('input', function() {
+            config.rotationX = parseInt(this.value);
+            document.getElementById('rotationXValue').textContent = this.value + '°';
+            document.getElementById('rotationXNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('rotationXNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= -180 && value <= 180) {
+              config.rotationX = value;
+              document.getElementById('rotationXValue').textContent = value + '°';
+              document.getElementById('rotationX').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('rotationY').addEventListener('input', function() {
+            config.rotationY = parseInt(this.value);
+            document.getElementById('rotationYValue').textContent = this.value + '°';
+            document.getElementById('rotationYNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('rotationYNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= -180 && value <= 180) {
+              config.rotationY = value;
+              document.getElementById('rotationYValue').textContent = value + '°';
+              document.getElementById('rotationY').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('rotationZ').addEventListener('input', function() {
+            config.rotationZ = parseInt(this.value);
+            document.getElementById('rotationZValue').textContent = this.value + '°';
+            document.getElementById('rotationZNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('rotationZNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= -180 && value <= 180) {
+              config.rotationZ = value;
+              document.getElementById('rotationZValue').textContent = value + '°';
+              document.getElementById('rotationZ').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('rotationSpeed').addEventListener('input', function() {
+            config.rotationSpeed = parseFloat(this.value);
+            document.getElementById('rotationSpeedValue').textContent = this.value;
+            document.getElementById('rotationSpeedNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('rotationSpeedNumber').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (value >= 0.1 && value <= 5) {
+              config.rotationSpeed = value;
+              document.getElementById('rotationSpeedValue').textContent = value;
+              document.getElementById('rotationSpeed').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          // Animation controls
+          document.getElementById('maxZoom').addEventListener('input', function() {
+            config.maxZoom = parseFloat(this.value);
+            document.getElementById('maxZoomValue').textContent = this.value;
+            document.getElementById('maxZoomNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('maxZoomNumber').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (value >= 1 && value <= 10) {
+              config.maxZoom = value;
+              document.getElementById('maxZoomValue').textContent = value;
+              document.getElementById('maxZoom').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('zoomSpeed').addEventListener('input', function() {
+            config.zoomSpeed = parseFloat(this.value);
+            document.getElementById('zoomSpeedValue').textContent = this.value;
+            document.getElementById('zoomSpeedNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('zoomSpeedNumber').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (value >= 0.01 && value <= 0.5) {
+              config.zoomSpeed = value;
+              document.getElementById('zoomSpeedValue').textContent = value;
+              document.getElementById('zoomSpeed').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('growthStart').addEventListener('input', function() {
+            config.growthStart = parseInt(this.value);
+            if (config.growthStart >= config.growthEnd) {
+              config.growthStart = config.growthEnd - 5;
+              this.value = config.growthStart;
+            }
+            document.getElementById('growthStartValue').textContent = this.value + '%';
+            document.getElementById('growthStartNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('growthStartNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 0 && value <= 50 && value < config.growthEnd) {
+              config.growthStart = value;
+              document.getElementById('growthStartValue').textContent = value + '%';
+              document.getElementById('growthStart').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('growthEnd').addEventListener('input', function() {
+            config.growthEnd = parseInt(this.value);
+            if (config.growthEnd <= config.growthStart) {
+              config.growthEnd = config.growthStart + 5;
+              this.value = config.growthEnd;
+            }
+            document.getElementById('growthEndValue').textContent = this.value + '%';
+            document.getElementById('growthEndNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('growthEndNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 50 && value <= 100 && value > config.growthStart) {
+              config.growthEnd = value;
+              document.getElementById('growthEndValue').textContent = value + '%';
+              document.getElementById('growthEnd').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          // Position and size controls
+          document.getElementById('xPosition').addEventListener('input', function() {
+            config.xPosition = parseInt(this.value);
+            document.getElementById('xPositionValue').textContent = this.value + '%';
+            document.getElementById('xPositionNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('xPositionNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 10 && value <= 90) {
+              config.xPosition = value;
+              document.getElementById('xPositionValue').textContent = value + '%';
+              document.getElementById('xPosition').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('yPosition').addEventListener('input', function() {
+            config.yPosition = parseInt(this.value);
+            document.getElementById('yPositionValue').textContent = this.value + '%';
+            document.getElementById('yPositionNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('yPositionNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 10 && value <= 90) {
+              config.yPosition = value;
+              document.getElementById('yPositionValue').textContent = value + '%';
+              document.getElementById('yPosition').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('zPosition').addEventListener('input', function() {
+            config.zPosition = parseInt(this.value);
+            document.getElementById('zPositionValue').textContent = this.value;
+            document.getElementById('zPositionNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('zPositionNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= -200 && value <= 200) {
+              config.zPosition = value;
+              document.getElementById('zPositionValue').textContent = value;
+              document.getElementById('zPosition').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('moveSpeed').addEventListener('input', function() {
+            config.moveSpeed = parseFloat(this.value);
+            document.getElementById('moveSpeedValue').textContent = this.value;
+            document.getElementById('moveSpeedNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('moveSpeedNumber').addEventListener('input', function() {
+            const value = parseFloat(this.value);
+            if (value >= 0.1 && value <= 3) {
+              config.moveSpeed = value;
+              document.getElementById('moveSpeedValue').textContent = value;
+              document.getElementById('moveSpeed').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          document.getElementById('startingSize').addEventListener('input', function() {
+            config.startingSize = parseInt(this.value);
+            document.getElementById('startingSizeValue').textContent = this.value;
+            document.getElementById('startingSizeNumber').value = this.value;
+            needsUpdate = true;
+          });
+          
+          document.getElementById('startingSizeNumber').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value >= 50 && value <= 200) {
+              config.startingSize = value;
+              document.getElementById('startingSizeValue').textContent = value;
+              document.getElementById('startingSize').value = value;
+              needsUpdate = true;
+            }
+          });
+          
+          // Log that controls are set up
+          console.log("Control panel setup complete");
+        }
       }
-      
-      p.windowResized = function() {
-        p.resizeCanvas(p.windowWidth, p.windowHeight);
-        needsUpdate = true;
-      };
-      
-      function updateMetrics(scrollProgress) {
-        const metricsElem = document.getElementById('metrics');
-        
-        metricsElem.innerHTML = `
-          <h4>Debug Information</h4>
-          Current Depth: ${currentDepth}/${config.maxDepth}<br>
-          Squares Drawn: ${squaresDrawn}<br>
-          Render Time: ${renderTime.toFixed(2)}ms<br>
-          Zoom Factor: ${zoomFactor.toFixed(2)}x<br>
-          Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%<br>
-          Growth: ${config.growthStart}% to ${config.growthEnd}%<br>
-          Branch Angle: ${Math.round(config.branchAngle)}° (Auto: ${config.autoAngle ? "On" : "Off"})<br>
-          Position: X:${Math.round(config.xPosition)}%, Y:${Math.round(config.yPosition)}%, Z:${Math.round(config.zPosition)}<br>
-          Auto-Move: ${config.autoMove ? "On" : "Off"}<br>
-          Rotation X: ${Math.round(config.rotationX)}°<br>
-          Rotation Y: ${Math.round(config.rotationY)}°<br>
-          Rotation Z: ${Math.round(config.rotationZ)}°
-        `;
-      }
-      
-      // Event listeners
-      window.addEventListener('scroll', function() {
-        needsUpdate = true;
-        lastScrollY = window.scrollY;
-      });
-      
-      function setupControlPanel() {
-        // Tree Structure controls
-        document.getElementById('maxDepth').addEventListener('input', function() {
-          config.maxDepth = parseInt(this.value);
-          document.getElementById('maxDepthValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('startDepth').addEventListener('input', function() {
-          config.startDepth = parseInt(this.value);
-          document.getElementById('startDepthValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('branchAngle').addEventListener('input', function() {
-          config.branchAngle = parseInt(this.value);
-          document.getElementById('branchAngleValue').textContent = this.value + '°';
-          needsUpdate = true;
-        });
-        
-        document.getElementById('autoAngle').addEventListener('change', function() {
-          config.autoAngle = this.checked;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('angleSpeed').addEventListener('input', function() {
-          config.angleSpeed = parseFloat(this.value);
-          document.getElementById('angleSpeedValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('scaleFactor').addEventListener('input', function() {
-          config.scaleFactor = parseFloat(this.value);
-          document.getElementById('scaleFactorValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        // Rotation controls
-        document.getElementById('rotationX').addEventListener('input', function() {
-          config.rotationX = parseInt(this.value);
-          document.getElementById('rotationXValue').textContent = this.value + '°';
-          needsUpdate = true;
-        });
-        
-        document.getElementById('rotationY').addEventListener('input', function() {
-          config.rotationY = parseInt(this.value);
-          document.getElementById('rotationYValue').textContent = this.value + '°';
-          needsUpdate = true;
-        });
-        
-        document.getElementById('rotationZ').addEventListener('input', function() {
-          config.rotationZ = parseInt(this.value);
-          document.getElementById('rotationZValue').textContent = this.value + '°';
-          needsUpdate = true;
-        });
-        
-        document.getElementById('autoRotate').addEventListener('change', function() {
-          config.autoRotate = this.checked;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('rotationSpeed').addEventListener('input', function() {
-          config.rotationSpeed = parseFloat(this.value);
-          document.getElementById('rotationSpeedValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        // Animation controls
-        document.getElementById('maxZoom').addEventListener('input', function() {
-          config.maxZoom = parseFloat(this.value);
-          document.getElementById('maxZoomValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('zoomSpeed').addEventListener('input', function() {
-          config.zoomSpeed = parseFloat(this.value);
-          document.getElementById('zoomSpeedValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('growthStart').addEventListener('input', function() {
-          config.growthStart = parseInt(this.value);
-          // Make sure growthStart is always less than growthEnd
-          if (config.growthStart >= config.growthEnd) {
-            config.growthStart = config.growthEnd - 5;
-            this.value = config.growthStart;
-          }
-          document.getElementById('growthStartValue').textContent = this.value + '%';
-          needsUpdate = true;
-        });
-        
-        document.getElementById('growthEnd').addEventListener('input', function() {
-          config.growthEnd = parseInt(this.value);
-          // Make sure growthEnd is always greater than growthStart
-          if (config.growthEnd <= config.growthStart) {
-            config.growthEnd = config.growthStart + 5;
-            this.value = config.growthEnd;
-          }
-          document.getElementById('growthEndValue').textContent = this.value + '%';
-          needsUpdate = true;
-        });
-        
-        // Color controls
-        document.getElementById('baseColor').addEventListener('input', function() {
-          const hex = this.value;
-          config.baseColor = [
-            parseInt(hex.slice(1, 3), 16),
-            parseInt(hex.slice(3, 5), 16),
-            parseInt(hex.slice(5, 7), 16)
-          ];
-          this.nextElementSibling.style.backgroundColor = hex;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('brandColor').addEventListener('input', function() {
-          const hex = this.value;
-          config.brandColor = [
-            parseInt(hex.slice(1, 3), 16),
-            parseInt(hex.slice(3, 5), 16),
-            parseInt(hex.slice(5, 7), 16)
-          ];
-          this.nextElementSibling.style.backgroundColor = hex;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('fillType').addEventListener('change', function() {
-          config.fillType = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('strokeWeight').addEventListener('input', function() {
-          config.strokeWeight = parseInt(this.value);
-          document.getElementById('strokeWeightValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        // Position and size controls
-        document.getElementById('xPosition').addEventListener('input', function() {
-          config.xPosition = parseInt(this.value);
-          document.getElementById('xPositionValue').textContent = this.value + '%';
-          needsUpdate = true;
-        });
-        
-        document.getElementById('yPosition').addEventListener('input', function() {
-          config.yPosition = parseInt(this.value);
-          document.getElementById('yPositionValue').textContent = this.value + '%';
-          needsUpdate = true;
-        });
-        
-        document.getElementById('zPosition').addEventListener('input', function() {
-          config.zPosition = parseInt(this.value);
-          document.getElementById('zPositionValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('autoMove').addEventListener('change', function() {
-          config.autoMove = this.checked;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('moveSpeed').addEventListener('input', function() {
-          config.moveSpeed = parseFloat(this.value);
-          document.getElementById('moveSpeedValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        document.getElementById('startingSize').addEventListener('input', function() {
-          config.startingSize = parseInt(this.value);
-          document.getElementById('startingSizeValue').textContent = this.value;
-          needsUpdate = true;
-        });
-        
-        // Log that controls are set up
-        console.log("Control panel setup complete");
-      }
-    }
-  </script>
-</body>
-</html>
+    </script>
+  </body>
+  </html>
