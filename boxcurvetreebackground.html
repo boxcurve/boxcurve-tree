@@ -156,7 +156,7 @@
       <div class="presets">
         <button id="preset1">Classic Tree</button>
         <button id="preset2">Spiral Galaxy</button>
-        <button id="preset3">Minimalist</button>
+        <button id="preset3">Static</button>
       </div>
       
       <div class="control-group">
@@ -194,6 +194,44 @@
           <span class="control-value" id="scaleFactorValue">0.7</span>
           <input type="number" id="scaleFactorNumber" min="0.5" max="0.9" step="0.05" value="0.7" style="width: 60px; margin-right: 10px;">
           <input type="range" id="scaleFactor" min="0.5" max="0.9" step="0.05" value="0.7">
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <h4>Position & Size</h4>
+        <div class="control-row">
+          <span class="control-label">X Position:</span>
+          <span class="control-value" id="xPositionValue">50%</span>
+          <input type="number" id="xPositionNumber" min="10" max="90" value="50" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="xPosition" min="10" max="90" value="50">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Y Position:</span>
+          <span class="control-value" id="yPositionValue">50%</span>
+          <input type="number" id="yPositionNumber" min="10" max="90" value="50" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="yPosition" min="10" max="90" value="50">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Z Position:</span>
+          <span class="control-value" id="zPositionValue">0</span>
+          <input type="number" id="zPositionNumber" min="-200" max="200" value="0" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="zPosition" min="-200" max="200" value="0">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Auto-Move:</span>
+          <input type="checkbox" id="autoMove" checked>
+        </div>
+        <div class="control-row">
+          <span class="control-label">Movement Speed:</span>
+          <span class="control-value" id="moveSpeedValue">0.1</span>
+          <input type="number" id="moveSpeedNumber" min="0.1" max="3" step="0.1" value="0.1" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="moveSpeed" min="0.1" max="3" step="0.1" value="0.1">
+        </div>
+        <div class="control-row">
+          <span class="control-label">Starting Size:</span>
+          <span class="control-value" id="startingSizeValue">120</span>
+          <input type="number" id="startingSizeNumber" min="50" max="200" value="120" style="width: 60px; margin-right: 10px;">
+          <input type="range" id="startingSize" min="50" max="200" value="120">
         </div>
       </div>
       
@@ -282,44 +320,6 @@
           <span class="control-label">Stroke Weight:</span>
           <span class="control-value" id="strokeWeightValue">4</span>
           <input type="range" id="strokeWeight" min="1" max="5" value="4">
-        </div>
-      </div>
-      
-      <div class="control-group">
-        <h4>Position & Size</h4>
-        <div class="control-row">
-          <span class="control-label">X Position:</span>
-          <span class="control-value" id="xPositionValue">50%</span>
-          <input type="number" id="xPositionNumber" min="10" max="90" value="50" style="width: 60px; margin-right: 10px;">
-          <input type="range" id="xPosition" min="10" max="90" value="50">
-        </div>
-        <div class="control-row">
-          <span class="control-label">Y Position:</span>
-          <span class="control-value" id="yPositionValue">50%</span>
-          <input type="number" id="yPositionNumber" min="10" max="90" value="50" style="width: 60px; margin-right: 10px;">
-          <input type="range" id="yPosition" min="10" max="90" value="50">
-        </div>
-        <div class="control-row">
-          <span class="control-label">Z Position:</span>
-          <span class="control-value" id="zPositionValue">0</span>
-          <input type="number" id="zPositionNumber" min="-200" max="200" value="0" style="width: 60px; margin-right: 10px;">
-          <input type="range" id="zPosition" min="-200" max="200" value="0">
-        </div>
-        <div class="control-row">
-          <span class="control-label">Auto-Move:</span>
-          <input type="checkbox" id="autoMove" checked>
-        </div>
-        <div class="control-row">
-          <span class="control-label">Movement Speed:</span>
-          <span class="control-value" id="moveSpeedValue">0.1</span>
-          <input type="number" id="moveSpeedNumber" min="0.1" max="3" step="0.1" value="0.1" style="width: 60px; margin-right: 10px;">
-          <input type="range" id="moveSpeed" min="0.1" max="3" step="0.1" value="0.1">
-        </div>
-        <div class="control-row">
-          <span class="control-label">Starting Size:</span>
-          <span class="control-value" id="startingSizeValue">120</span>
-          <input type="number" id="startingSizeNumber" min="50" max="200" value="120" style="width: 60px; margin-right: 10px;">
-          <input type="range" id="startingSize" min="50" max="200" value="120">
         </div>
       </div>
       
@@ -446,22 +446,22 @@
             startingSize: 150
           },
           preset3: {
-            name: "Minimalist",
+            name: "Static",
             maxDepth: 5,
             startDepth: 1,
-            branchAngle: 60,
+            branchAngle: 37,
             autoAngle: false,
-            angleSpeed: 0.1,
+            angleSpeed: 0,
             scaleFactor: 0.65,
             rotationX: 0,
             rotationY: 0,
             rotationZ: 0,
             autoRotate: false,
-            rotationSpeed: 0.3,
-            maxZoom: 4.0,
-            zoomSpeed: 0.05,
+            rotationSpeed: 0,
+            maxZoom: 1.0,
+            zoomSpeed: 0,
             growthStart: 0,
-            growthEnd: 80,
+            growthEnd: 100,
             baseColor: [0, 0, 0], // Black
             brandColor: [255, 255, 255], // White
             fillType: 'outline',
@@ -470,7 +470,7 @@
             yPosition: 60,
             zPosition: 0,
             autoMove: false,
-            moveSpeed: 0.1,
+            moveSpeed: 0,
             startingSize: 100
           }
         };
