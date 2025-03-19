@@ -460,7 +460,7 @@
             name: "Static",
             maxDepth: 7,
             startDepth: 2,
-            branchAngle: 35,
+            branchAngle: 34,
             autoAngle: false,
             angleSpeed: 0,
             scaleFactor: 0.7,
@@ -468,17 +468,17 @@
             rotationY: 0,
             rotationZ: 0,
             autoRotate: false,
-            rotationSpeed: 0,
-            maxZoom: 1.0,
-            zoomSpeed: 0,
-            growthStart: 0,
+            rotationSpeed: 0.7,
+            maxZoom: 6.0,
+            zoomSpeed: 0.1,
+            growthStart: 2,
             growthEnd: 100,
             baseColor: [20, 40, 100], // Navy Blue #142864
             brandColor: [240, 78, 35], // Boxcurve Orange #F04E23
             fillType: 'outline',
             strokeWeight: 4,
             xPosition: 50,
-            yPosition: 50,
+            yPosition: 73,
             zPosition: 0,
             autoMove: false,
             moveSpeed: 0,
@@ -881,11 +881,8 @@
             Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%<br>
             Growth: ${config.growthStart}% to ${config.growthEnd}%<br>
             Branch Angle: ${Math.round(config.branchAngle)}° (Auto: ${config.autoAngle ? "On" : "Off"})<br>
-            Position: X:${Math.round(config.xPosition)}%, Y:${Math.round(config.yPosition)}%, Z:${Math.round(config.zPosition)}<br>
-            Auto-Move: ${config.autoMove ? "On" : "Off"}<br>
-            Rotation X: ${Math.round(config.rotationX)}°<br>
-            Rotation Y: ${Math.round(config.rotationY)}°<br>
-            Rotation Z: ${Math.round(config.rotationZ)}°
+            Position: X:${Math.round(config.xPosition)}%, Y:${Math.round(config.yPosition)}%, Z:${Math.round(config.zPosition)} (Auto: ${config.autoMove ? "On" : "Off"})<br>
+            Rotation: X:${Math.round(config.rotationX)}°, Y:${Math.round(config.rotationY)}°, Z:${Math.round(config.rotationZ)}° (Auto: ${config.autoRotate ? "On" : "Off"})
           `;
         }
         
@@ -1323,6 +1320,10 @@
           if (savedPreset && presets[savedPreset]) {
             applyPreset(savedPreset);
             console.log(`Loaded saved preset: ${presets[savedPreset].name}`);
+          } else {
+            // If no preset is saved, use the Static preset as default
+            applyPreset('preset3');
+            console.log(`No saved preset found. Using default preset: ${presets.preset3.name}`);
           }
         }
         
