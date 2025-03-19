@@ -154,9 +154,9 @@
       <h3>Boxcurve Tree Control Panel</h3>
       
       <div class="presets">
-        <button id="preset1">Preset 1</button>
-        <button id="preset2">Preset 2</button>
-        <button id="preset3">Preset 3</button>
+        <button id="preset1">Classic Tree</button>
+        <button id="preset2">Spiral Galaxy</button>
+        <button id="preset3">Minimalist</button>
       </div>
       
       <div class="control-group">
@@ -387,6 +387,94 @@
           startingSize: 120
         };
         
+        // Define presets
+        const presets = {
+          preset1: {
+            name: "Classic Tree",
+            maxDepth: 7,
+            startDepth: 2,
+            branchAngle: 35,
+            autoAngle: true,
+            angleSpeed: 0.3,
+            scaleFactor: 0.7,
+            rotationX: 0,
+            rotationY: 0,
+            rotationZ: 0,
+            autoRotate: true,
+            rotationSpeed: 0.7,
+            maxZoom: 6.0,
+            zoomSpeed: 0.1,
+            growthStart: 2,
+            growthEnd: 100,
+            baseColor: [20, 40, 100],
+            brandColor: [240, 78, 35],
+            fillType: 'outline',
+            strokeWeight: 4,
+            xPosition: 50,
+            yPosition: 50,
+            zPosition: 0,
+            autoMove: true,
+            moveSpeed: 0.1,
+            startingSize: 120
+          },
+          preset2: {
+            name: "Spiral Galaxy",
+            maxDepth: 12,
+            startDepth: 3,
+            branchAngle: 45,
+            autoAngle: true,
+            angleSpeed: 0.5,
+            scaleFactor: 0.8,
+            rotationX: 20,
+            rotationY: 15,
+            rotationZ: 30,
+            autoRotate: true,
+            rotationSpeed: 1.2,
+            maxZoom: 8.0,
+            zoomSpeed: 0.15,
+            growthStart: 5,
+            growthEnd: 95,
+            baseColor: [75, 0, 130], // Indigo
+            brandColor: [255, 215, 0], // Gold
+            fillType: 'gradient',
+            strokeWeight: 2,
+            xPosition: 50,
+            yPosition: 40,
+            zPosition: -50,
+            autoMove: true,
+            moveSpeed: 0.2,
+            startingSize: 150
+          },
+          preset3: {
+            name: "Minimalist",
+            maxDepth: 5,
+            startDepth: 1,
+            branchAngle: 60,
+            autoAngle: false,
+            angleSpeed: 0.1,
+            scaleFactor: 0.65,
+            rotationX: 0,
+            rotationY: 0,
+            rotationZ: 0,
+            autoRotate: false,
+            rotationSpeed: 0.3,
+            maxZoom: 4.0,
+            zoomSpeed: 0.05,
+            growthStart: 0,
+            growthEnd: 80,
+            baseColor: [0, 0, 0], // Black
+            brandColor: [255, 255, 255], // White
+            fillType: 'outline',
+            strokeWeight: 5,
+            xPosition: 50,
+            yPosition: 60,
+            zPosition: 0,
+            autoMove: false,
+            moveSpeed: 0.1,
+            startingSize: 100
+          }
+        };
+        
         // ===== Runtime Variables =====
         let needsUpdate = true;
         let lastScrollY = 0;
@@ -416,6 +504,9 @@
           lastMouseX = p.mouseX;
           lastMouseY = p.mouseY;
           lastFrameTime = p.millis();
+          
+          // Load saved preset if available
+          loadSavedPreset();
           
           // Set up control panel event listeners
           setupControlPanel();
@@ -777,6 +868,19 @@
         });
         
         function setupControlPanel() {
+          // Set up preset buttons
+          document.getElementById('preset1').addEventListener('click', function() {
+            applyPreset('preset1');
+          });
+          
+          document.getElementById('preset2').addEventListener('click', function() {
+            applyPreset('preset2');
+          });
+          
+          document.getElementById('preset3').addEventListener('click', function() {
+            applyPreset('preset3');
+          });
+          
           // Tree Structure controls
           document.getElementById('maxDepth').addEventListener('input', function() {
             config.maxDepth = parseInt(this.value);
@@ -863,6 +967,12 @@
             }
           });
           
+          // Auto-Angle checkbox
+          document.getElementById('autoAngle').addEventListener('change', function() {
+            config.autoAngle = this.checked;
+            needsUpdate = true;
+          });
+          
           // Rotation controls
           document.getElementById('rotationX').addEventListener('input', function() {
             config.rotationX = parseInt(this.value);
@@ -930,6 +1040,12 @@
               document.getElementById('rotationSpeed').value = value;
               needsUpdate = true;
             }
+          });
+          
+          // Auto-Rotate checkbox
+          document.getElementById('autoRotate').addEventListener('change', function() {
+            config.autoRotate = this.checked;
+            needsUpdate = true;
           });
           
           // Animation controls
@@ -1095,8 +1211,154 @@
             }
           });
           
+          // Auto-Move checkbox
+          document.getElementById('autoMove').addEventListener('change', function() {
+            config.autoMove = this.checked;
+            needsUpdate = true;
+          });
+          
           // Log that controls are set up
           console.log("Control panel setup complete");
+        }
+        
+        // Function to apply a preset
+        function applyPreset(presetKey) {
+          if (!presets[presetKey]) {
+            console.error('Preset not found:', presetKey);
+            return;
+          }
+          
+          console.log(`Applying preset: ${presets[presetKey].name}`);
+          
+          // Save the chosen preset to localStorage
+          localStorage.setItem('boxcurveTreePreset', presetKey);
+          
+          // Apply the preset configuration
+          const preset = presets[presetKey];
+          for (const key in preset) {
+            if (key !== 'name' && key in config) {
+              config[key] = preset[key];
+            }
+          }
+          
+          // Update all UI controls to match the preset
+          updateUIFromConfig();
+          
+          // Trigger update
+          needsUpdate = true;
+        }
+        
+        // Function to load saved preset
+        function loadSavedPreset() {
+          const savedPreset = localStorage.getItem('boxcurveTreePreset');
+          if (savedPreset && presets[savedPreset]) {
+            applyPreset(savedPreset);
+            console.log(`Loaded saved preset: ${presets[savedPreset].name}`);
+          }
+        }
+        
+        // Function to update all UI controls based on current config
+        function updateUIFromConfig() {
+          // Tree Structure
+          document.getElementById('maxDepth').value = config.maxDepth;
+          document.getElementById('maxDepthValue').textContent = config.maxDepth;
+          document.getElementById('maxDepthNumber').value = config.maxDepth;
+          
+          document.getElementById('startDepth').value = config.startDepth;
+          document.getElementById('startDepthValue').textContent = config.startDepth;
+          document.getElementById('startDepthNumber').value = config.startDepth;
+          
+          document.getElementById('branchAngle').value = config.branchAngle;
+          document.getElementById('branchAngleValue').textContent = config.branchAngle + '°';
+          document.getElementById('branchAngleNumber').value = config.branchAngle;
+          
+          document.getElementById('autoAngle').checked = config.autoAngle;
+          
+          document.getElementById('angleSpeed').value = config.angleSpeed;
+          document.getElementById('angleSpeedValue').textContent = config.angleSpeed;
+          document.getElementById('angleSpeedNumber').value = config.angleSpeed;
+          
+          document.getElementById('scaleFactor').value = config.scaleFactor;
+          document.getElementById('scaleFactorValue').textContent = config.scaleFactor;
+          document.getElementById('scaleFactorNumber').value = config.scaleFactor;
+          
+          // Rotation
+          document.getElementById('rotationX').value = config.rotationX;
+          document.getElementById('rotationXValue').textContent = config.rotationX + '°';
+          document.getElementById('rotationXNumber').value = config.rotationX;
+          
+          document.getElementById('rotationY').value = config.rotationY;
+          document.getElementById('rotationYValue').textContent = config.rotationY + '°';
+          document.getElementById('rotationYNumber').value = config.rotationY;
+          
+          document.getElementById('rotationZ').value = config.rotationZ;
+          document.getElementById('rotationZValue').textContent = config.rotationZ + '°';
+          document.getElementById('rotationZNumber').value = config.rotationZ;
+          
+          document.getElementById('autoRotate').checked = config.autoRotate;
+          
+          document.getElementById('rotationSpeed').value = config.rotationSpeed;
+          document.getElementById('rotationSpeedValue').textContent = config.rotationSpeed;
+          document.getElementById('rotationSpeedNumber').value = config.rotationSpeed;
+          
+          // Animation
+          document.getElementById('maxZoom').value = config.maxZoom;
+          document.getElementById('maxZoomValue').textContent = config.maxZoom;
+          document.getElementById('maxZoomNumber').value = config.maxZoom;
+          
+          document.getElementById('zoomSpeed').value = config.zoomSpeed;
+          document.getElementById('zoomSpeedValue').textContent = config.zoomSpeed;
+          document.getElementById('zoomSpeedNumber').value = config.zoomSpeed;
+          
+          document.getElementById('growthStart').value = config.growthStart;
+          document.getElementById('growthStartValue').textContent = config.growthStart + '%';
+          document.getElementById('growthStartNumber').value = config.growthStart;
+          
+          document.getElementById('growthEnd').value = config.growthEnd;
+          document.getElementById('growthEndValue').textContent = config.growthEnd + '%';
+          document.getElementById('growthEndNumber').value = config.growthEnd;
+          
+          // Colors
+          const baseColorHex = rgbToHex(config.baseColor[0], config.baseColor[1], config.baseColor[2]);
+          document.getElementById('baseColor').value = baseColorHex;
+          document.querySelector('#baseColor + .color-preview').style.backgroundColor = baseColorHex;
+          
+          const brandColorHex = rgbToHex(config.brandColor[0], config.brandColor[1], config.brandColor[2]);
+          document.getElementById('brandColor').value = brandColorHex;
+          document.querySelector('#brandColor + .color-preview').style.backgroundColor = brandColorHex;
+          
+          document.getElementById('fillType').value = config.fillType;
+          
+          document.getElementById('strokeWeight').value = config.strokeWeight;
+          document.getElementById('strokeWeightValue').textContent = config.strokeWeight;
+          
+          // Position and Size
+          document.getElementById('xPosition').value = config.xPosition;
+          document.getElementById('xPositionValue').textContent = config.xPosition + '%';
+          document.getElementById('xPositionNumber').value = config.xPosition;
+          
+          document.getElementById('yPosition').value = config.yPosition;
+          document.getElementById('yPositionValue').textContent = config.yPosition + '%';
+          document.getElementById('yPositionNumber').value = config.yPosition;
+          
+          document.getElementById('zPosition').value = config.zPosition;
+          document.getElementById('zPositionValue').textContent = config.zPosition;
+          document.getElementById('zPositionNumber').value = config.zPosition;
+          
+          document.getElementById('autoMove').checked = config.autoMove;
+          
+          document.getElementById('moveSpeed').value = config.moveSpeed;
+          document.getElementById('moveSpeedValue').textContent = config.moveSpeed;
+          document.getElementById('moveSpeedNumber').value = config.moveSpeed;
+          
+          document.getElementById('startingSize').value = config.startingSize;
+          document.getElementById('startingSizeValue').textContent = config.startingSize;
+          document.getElementById('startingSizeNumber').value = config.startingSize;
+        }
+        
+        // Helper function to convert RGB to hex
+        function rgbToHex(r, g, b) {
+          return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         }
       }
     </script>
