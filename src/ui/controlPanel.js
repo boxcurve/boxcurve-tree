@@ -92,15 +92,11 @@ class ControlPanel {
 
   // Function to setup control panel event listeners
   setupControlPanel() {
-    // Store reference to this for use in event listeners
-    const self = this;
-
     // Helper function to update config and trigger redraw
     const updateConfig = (key, value) => {
-      console.log(`Updating config ${key} to:`, value);
       window.config[key] = value;
-      self.needsUpdate = true;
-      self.saveCurrentPreset();
+      this.needsUpdate = true;
+      this.saveCurrentPreset();
       
       // Dispatch color change event if a color was updated
       if (key === 'baseColor' || key === 'brandColor') {
@@ -118,19 +114,7 @@ class ControlPanel {
       if (element && numberElement) {
         // Sync the number input with the range input
         element.addEventListener('input', function() {
-          let value;
-          if (isInteger) {
-            value = parseInt(this.value);
-          } else {
-            value = parseFloat(this.value);
-          }
-          
-          // Ensure the value is a number
-          if (isNaN(value)) {
-            console.warn(`Invalid value for ${id}:`, this.value);
-            return;
-          }
-          
+          const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
           numberElement.value = value;
           if (valueElement) {
             let displayValue = value;
@@ -141,25 +125,11 @@ class ControlPanel {
             }
             valueElement.textContent = displayValue;
           }
-          
-          console.log(`Updating ${id} to:`, value);
           updateConfig(id, value);
         });
 
         numberElement.addEventListener('input', function() {
-          let value;
-          if (isInteger) {
-            value = parseInt(this.value);
-          } else {
-            value = parseFloat(this.value);
-          }
-          
-          // Ensure the value is a number
-          if (isNaN(value)) {
-            console.warn(`Invalid value for ${id}:`, this.value);
-            return;
-          }
-          
+          const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
           element.value = value;
           if (valueElement) {
             let displayValue = value;
@@ -170,8 +140,6 @@ class ControlPanel {
             }
             valueElement.textContent = displayValue;
           }
-          
-          console.log(`Updating ${id} to:`, value);
           updateConfig(id, value);
         });
       }
@@ -243,6 +211,29 @@ class ControlPanel {
     if (fillTypeSelect) {
       fillTypeSelect.addEventListener('change', function() {
         updateConfig('fillType', this.value);
+      });
+    }
+
+    // Setup stroke weight control
+    const strokeWeightInput = document.getElementById('strokeWeight');
+    const strokeWeightNumber = document.getElementById('strokeWeightNumber');
+    const strokeWeightValue = document.getElementById('strokeWeightValue');
+
+    if (strokeWeightInput && strokeWeightNumber && strokeWeightValue) {
+      strokeWeightInput.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        strokeWeightNumber.value = value;
+        strokeWeightValue.textContent = value;
+        updateConfig('strokeWeight', value);
+      });
+
+      strokeWeightNumber.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value >= 1 && value <= 10) {
+          strokeWeightInput.value = value;
+          strokeWeightValue.textContent = value;
+          updateConfig('strokeWeight', value);
+        }
       });
     }
 
