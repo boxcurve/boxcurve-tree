@@ -11,89 +11,114 @@ class SVGExporter {
 
     if (exportButton) {
       exportButton.addEventListener('click', () => {
-        exportStatus.textContent = 'Generating SVG...';
-        this.exportTreeAsSVG(exportQuality.value)
+        if (exportStatus) exportStatus.textContent = 'Generating SVG...';
+        this.exportTreeAsSVG(exportQuality ? exportQuality.value : 'standard')
           .then(() => {
-            exportStatus.textContent = 'SVG exported successfully!';
-            setTimeout(() => {
-              exportStatus.textContent = '';
-            }, 3000);
+            if (exportStatus) {
+              exportStatus.textContent = 'SVG exported successfully!';
+              setTimeout(() => {
+                exportStatus.textContent = '';
+              }, 3000);
+            }
           })
           .catch(error => {
             console.error('Error exporting SVG:', error);
-            exportStatus.textContent = 'Error exporting SVG';
-            setTimeout(() => {
-              exportStatus.textContent = '';
-            }, 3000);
+            if (exportStatus) {
+              exportStatus.textContent = 'Error exporting SVG';
+              setTimeout(() => {
+                exportStatus.textContent = '';
+              }, 3000);
+            }
           });
       });
     }
   }
 
   async exportTreeAsSVG(quality = 'standard') {
-    // Create SVG element
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    
-    // Set SVG attributes based on quality
-    const scale = quality === 'high' ? 2 : 1;
-    const width = window.innerWidth * scale;
-    const height = window.innerHeight * scale;
-    
-    svg.setAttribute('width', width);
-    svg.setAttribute('height', height);
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    
-    // Add metadata
-    const metadata = document.createElementNS('http://www.w3.org/2000/svg', 'metadata');
-    metadata.textContent = JSON.stringify({
-      title: 'Boxcurve Tree',
-      creator: 'Boxcurve Tree Generator',
-      date: new Date().toISOString(),
-      config: window.config
-    });
-    svg.appendChild(metadata);
-    
-    // Create definitions for gradients
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    
-    // Add base gradient
-    const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-    gradient.id = 'treeGradient';
-    gradient.setAttribute('gradientTransform', 'rotate(90)');
-    
-    const stops = [
-      { offset: '0%', color: this.rgbToHex(window.config.baseColor) },
-      { offset: '100%', color: this.rgbToHex(window.config.brandColor) }
-    ];
-    
-    stops.forEach(stop => {
-      const stopElement = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-      stopElement.setAttribute('offset', stop.offset);
-      stopElement.setAttribute('stop-color', stop.color);
-      gradient.appendChild(stopElement);
-    });
-    
-    defs.appendChild(gradient);
-    svg.appendChild(defs);
-    
-    // Generate tree structure
-    const treeGroup = this.generateTreeSVG(width / 2, height / 2, window.config.startingSize * scale);
-    svg.appendChild(treeGroup);
-    
-    // Convert SVG to string
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svg);
-    
-    // Create blob and download
-    const blob = new Blob([svgString], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'boxcurve-tree.svg';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+      // Create SVG element
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      
+      // Set SVG attributes based on quality
+      const scale = quality === 'high' ? 2 : 1;
+      const width = window.innerWidth * scale;
+      const height = window.innerHeight * scale;
+      
+      svg.setAttribute('width', width);
+      svg.setAttribute('height', height);
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      
+      // Add metadata
+      const metadata = document.createElementNS('http://www.w3.org/2000/svg', 'metadata');
+      metadata.textContent = JSON.stringify({
+        title: 'Boxcurve Tree',
+        creator: 'Boxcurve Tree Generator',
+        date: new Date().toISOString(),
+        config: window.config
+      });
+      svg.appendChild(metadata);
+      
+      // Create definitions for gradients
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      
+      // Add base gradient
+      const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+      gradient.id = 'treeGradient';
+      gradient.setAttribute('gradientTransform', 'rotate(90)');
+      
+      const stops = [
+        { offset: '0%', color: this.rgbToHex(window.config.baseColor) },
+        { offset: '100%', color: this.rgbToHex(window.config.brandColor) }
+      ];
+      
+      stops.forEach(stop => {
+        const stopElement = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stopElement.setAttribute('offset', stop.offset);
+        stopElement.setAttribute('stop-color', stop.color);
+        gradient.appendChild(stopElement);
+      });
+      
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+      
+      // Create main group for the tree with current transformations
+      const mainGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      mainGroup.setAttribute('transform', `translate(${width/2} ${height/2})`);
+      
+      // Apply current rotations
+      if (window.config.rotationX || window.config.rotationY || window.config.rotationZ) {
+        mainGroup.setAttribute('transform', 
+          `${mainGroup.getAttribute('transform')} 
+           rotate(${window.config.rotationZ}) 
+           rotateX(${window.config.rotationX}) 
+           rotateY(${window.config.rotationY})`
+        );
+      }
+      
+      // Generate tree structure
+      const treeGroup = this.generateTreeSVG(0, 0, window.config.startingSize * scale);
+      mainGroup.appendChild(treeGroup);
+      svg.appendChild(mainGroup);
+      
+      // Convert SVG to string
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svg);
+      
+      // Create blob and download
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'boxcurve-tree.svg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error in SVG export:', error);
+      throw error;
+    }
   }
 
   generateTreeSVG(x, y, size, depth = 0) {
