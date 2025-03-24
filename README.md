@@ -1,134 +1,131 @@
-# Boxcurve Tree Interactive Animation
+# Boxcurve Tree Animation
 
-A highly customizable, interactive 3D recursive tree visualization that uses Boxcurve's design principles to create beautiful, animated tree structures in real-time using the p5.js library.
-
-![Boxcurve Tree Animation](https://github.com/boxcurve/tree-animation/raw/main/preview.png)
-
-## Overview
-
-The Boxcurve Tree animation is a web-based interactive visualization that generates fractal-like tree structures using recursive square patterns. The animation features a complete 3D rendering system with depth, lighting, and advanced movement patterns, all controlled through an intuitive user interface.
+An interactive, modular 3D tree animation system built with p5.js that creates beautiful, customizable recursive tree structures.
 
 ## Features
 
-- **Fully Interactive 3D Tree**: Real-time rendering of recursive square-based tree structures with adjustable depth, angles, and dimensions.
-- **Comprehensive Control Panel**: Fine-tune every aspect of the visualization from structure to colors.
-- **3D Effects**: Pixel depth and light angle adjustments with customizable lighting.
-- **Animation Presets**: Quick access to different tree styles (Classic Tree, Spiral Galaxy, Static).
-- **Auto-Movement & Rotation**: Smooth organic movements with configurable parameters.
-- **Multiple Fill Styles**: Gradient, Solid, Outline Only, and Side Walls Only rendering options.
-- **Responsive Design**: Adapts to different screen sizes and scroll positions.
-- **SVG Export**: Export high-quality SVG files compatible with Adobe Illustrator.
+### Core Functionality
+- Recursive tree generation with customizable depth and branching
+- Real-time 3D rendering with p5.js
+- Smooth animations and transitions
+- Scroll-based growth and zoom effects
+- Interactive control panel for real-time customization
 
-## Live Demo
+### Visualization Options
+- Multiple fill types: gradient, solid, outline, sidewalls
+- Dynamic color system with base and brand colors
+- Adjustable stroke weight and style
+- 3D depth controls with level-based variation
+- Advanced lighting system with adjustable angles and intensity
 
-Visit [boxcurve.com/tree-animation](https://boxcurve.com/tree-animation) to see the animation in action.
+### Animation Controls
+- Auto-rotation with customizable speed and axes
+- Automated movement patterns
+- Dynamic angle changes
+- Automatic depth variations
+- Smooth zoom transitions
+
+### Presets
+- Classic Tree
+- Spiral Galaxy
+- Static Display
+- Preset saving and loading system
+
+## Project Structure
+
+```
+src/
+├── assets/
+│   └── styles/
+│       └── main.css
+├── config/
+│   └── config.js
+├── sketch/
+│   └── p5Sketch.js
+├── svg/
+│   └── svgExport.js
+├── ui/
+│   └── controlPanel.js
+└── utils/
+    └── helpers.js
+```
+
+### Module Descriptions
+
+- **config.js**: Central configuration management
+- **p5Sketch.js**: Core rendering and animation logic
+- **controlPanel.js**: Interactive UI controls
+- **svgExport.js**: SVG export functionality
+- **helpers.js**: Utility functions for color conversion and math operations
+- **main.css**: Core styling for UI elements
+
+## Recent Improvements
+
+1. Modularized Codebase
+   - Separated concerns into distinct modules
+   - Improved code organization and maintainability
+   - Implemented ES6 module system
+
+2. Enhanced Control Panel
+   - Added real-time parameter updates
+   - Improved UI responsiveness
+   - Fixed color picker functionality
+   - Added stroke weight controls
+
+3. Utility Functions
+   - Centralized helper functions
+   - Improved color conversion system
+   - Added mathematical utility functions
+   - Enhanced code reusability
+
+4. Configuration System
+   - Centralized config management
+   - Added preset system
+   - Implemented local storage for settings
+   - Added intermediate color management
+
+## Known Issues and TODOs
+
+### Bugs to Fix
+- SVG export functionality needs repair (currently not working correctly)
+
+### Future Enhancements
+- Add more preset variations
+- Implement touch controls for mobile
+- Add animation sequence recording
+- Create more export options (PNG, GIF)
 
 ## Usage
 
-1. **Open the HTML file**: Launch the `boxcurvetreebackground.html` file in a modern web browser.
-2. **Interact with the Visualization**:
-   - Scroll to see zoom effects based on scroll position
-   - Use the control panel to customize the tree appearance
-   - Click preset buttons for quick configuration changes
-   - Export your creation as an SVG for use in design tools
-
-## Control Panel Options
-
-### Tree Structure
-- **Max Depth**: Control the maximum recursive depth of the tree (3-15)
-- **Start Depth**: Set the initial depth (1-5)
-- **Branch Angle**: Adjust the angle between branches (10°-80°)
-- **Auto-Change Angle**: Toggle automatic angle variation over time
-- **Angle Change Speed**: Control the speed of automatic angle changes (0.1-3)
-- **Scale Factor**: Set the scaling between parent and child branches (0.5-0.9)
-
-### Position & Size
-- **X/Y/Z Position**: Position the tree in 3D space
-- **Auto-Move**: Enable smooth automatic movement patterns
-- **Movement Speed**: Control the speed of automatic movements
-- **Starting Size**: Set the size of the initial square
-
-### Rotation
-- **X/Y/Z-Axis Rotation**: Rotate the tree along each axis (-180° to 180°)
-- **Auto-Rotate**: Enable automatic rotation over time
-- **Rotation Speed**: Control rotation animation speed
-
-### Animation
-- **Max Zoom**: Set maximum zoom level during scroll (1-10)
-- **Zoom Speed**: Control the speed of zoom transitions
-- **Growth Start/End**: Configure when the tree starts/finishes growing during page scroll
-
-### Colors
-- **Base Color**: Set the primary color for the tree
-- **Brand Color**: Set the accent color
-- **Fill Type**: Choose between Gradient, Solid, Outline Only, or Side Walls Only
-- **Stroke Weight**: Adjust the thickness of outlines
-
-### 3D Depth Settings
-- **Pixel Depth**: Control the depth of the 3D effect (0-50)
-- **Auto Depth Variation**: Enable automatic variation of depth over time
-- **Depth by Level**: Vary depth based on tree level
-
-### Lighting Settings
-- **Light Angle X/Y**: Control light direction for 3D shading
-- **Light Intensity**: Adjust the intensity of lighting effects
-- **Enable Lighting**: Toggle lighting effects on/off
-
-### Export Options
-- **Export as SVG**: Save the current view as an SVG file
-- **Export Quality**: Choose between Standard and High Resolution exports
-
-## Technical Implementation
-
-The visualization uses the following technologies:
-
-- **p5.js**: Core library for creative coding and visual rendering
-- **HTML5/CSS3**: Structure and styling
-- **JavaScript**: Custom recursive algorithms and interactive controls
-- **SVG**: Export format for high-quality graphics
-
-The tree is generated using a recursive algorithm that creates squares and calculates appropriate connection points between them. The 3D effect is achieved by extruding the squares along the Z-axis and applying lighting calculations based on surface normals.
-
-## Code Structure
-
-- **Setup & Initialization**: Configuration of canvas and initial parameters
-- **Draw Loop**: Real-time rendering of the tree structure
-- **Tree Generation**: Recursive functions for creating the branching structure
-- **Interaction Handlers**: Functions for processing user input and scroll events
-- **Control Panel**: Interface elements for adjusting parameters
-- **Export System**: SVG conversion and download functionality
-
-## Performance Considerations
-
-The visualization is optimized for performance through:
-- Conditional rendering based on viewport visibility
-- Adaptive detail levels based on system performance
-- Throttled UI updates to reduce overhead
-- Frame-skipping for smoother experience on lower-end devices
-
-## Customization
-
-The code is fully open to customization:
-- Modify the `presets` object to create your own predefined styles
-- Adjust the `config` object for default settings
-- Edit the `intermediateColors` array to change gradient patterns
-- Modify rendering functions for different visual styles
+1. Open index.html in a modern web browser
+2. Use the control panel to customize the tree:
+   - Adjust structural parameters (depth, angles, scale)
+   - Modify colors and fill styles
+   - Control animations and movements
+   - Experiment with lighting and 3D effects
+3. Scroll to see the tree grow and transform
+4. Save your favorite configurations as presets
 
 ## Browser Compatibility
 
-- Chrome/Edge (recommended): Full support for all features
-- Firefox: Good support with minor differences in 3D rendering
-- Safari: Compatible with possible performance variations
-- Mobile browsers: Functional with touch-based controls
+Tested and working in:
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+
+## Dependencies
+
+- p5.js v1.4.0
+- Modern browser with ES6 module support
+
+## Development
+
+To modify or enhance the project:
+1. Clone the repository
+2. Make changes to the relevant modules
+3. Test in a local server (required for ES6 modules)
+4. Submit pull requests for improvements
 
 ## License
 
-This project is available under the MIT License. See the LICENSE file for details.
-
-## Credits
-
-Created by [Boxcurve](https://boxcurve.com) using p5.js
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request or open an Issue to suggest improvements or report bugs.
+MIT License - Feel free to use and modify for your own projects.
