@@ -1,6 +1,7 @@
 // SVG Export Module
 class SVGExporter {
   constructor() {
+    console.log('SVG Exporter initialized');
     this.setupExportButton();
   }
 
@@ -9,11 +10,28 @@ class SVGExporter {
     const exportStatus = document.getElementById('exportStatus');
     const exportQuality = document.getElementById('exportQuality');
 
+    console.log('Export button:', exportButton);
+    console.log('Export status:', exportStatus);
+    console.log('Export quality:', exportQuality);
+
     if (exportButton) {
       exportButton.addEventListener('click', () => {
+        console.log('Export button clicked');
         if (exportStatus) exportStatus.textContent = 'Generating SVG...';
-        this.exportTreeAsSVG(exportQuality ? exportQuality.value : 'standard')
+        
+        // Verify config is available
+        if (!window.config) {
+          console.error('Config not found');
+          if (exportStatus) exportStatus.textContent = 'Error: Configuration not found';
+          return;
+        }
+
+        const quality = exportQuality ? exportQuality.value : 'standard';
+        console.log('Export quality:', quality);
+        
+        this.exportTreeAsSVG(quality)
           .then(() => {
+            console.log('SVG export completed successfully');
             if (exportStatus) {
               exportStatus.textContent = 'SVG exported successfully!';
               setTimeout(() => {
@@ -24,20 +42,25 @@ class SVGExporter {
           .catch(error => {
             console.error('Error exporting SVG:', error);
             if (exportStatus) {
-              exportStatus.textContent = 'Error exporting SVG';
+              exportStatus.textContent = 'Error exporting SVG: ' + error.message;
               setTimeout(() => {
                 exportStatus.textContent = '';
               }, 3000);
             }
           });
       });
+      console.log('Export button event listener added');
+    } else {
+      console.error('Export button not found in DOM');
     }
   }
 
   async exportTreeAsSVG(quality = 'standard') {
+    console.log('Starting SVG export with quality:', quality);
     try {
       // Create SVG element
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      console.log('SVG element created');
       
       // Set SVG attributes based on quality
       const scale = quality === 'high' ? 2 : 1;
@@ -48,6 +71,7 @@ class SVGExporter {
       svg.setAttribute('height', height);
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
       svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      console.log('SVG attributes set:', { width, height, scale });
       
       // Add metadata
       const metadata = document.createElementNS('http://www.w3.org/2000/svg', 'metadata');
@@ -58,6 +82,7 @@ class SVGExporter {
         config: window.config
       });
       svg.appendChild(metadata);
+      console.log('Metadata added');
       
       // Create definitions for gradients
       const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -81,6 +106,7 @@ class SVGExporter {
       
       defs.appendChild(gradient);
       svg.appendChild(defs);
+      console.log('Gradient definitions added');
       
       // Create main group for the tree with current transformations
       const mainGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -88,15 +114,16 @@ class SVGExporter {
       
       // Apply current rotations
       if (window.config.rotationX || window.config.rotationY || window.config.rotationZ) {
-        mainGroup.setAttribute('transform', 
-          `${mainGroup.getAttribute('transform')} 
-           rotate(${window.config.rotationZ}) 
-           rotateX(${window.config.rotationX}) 
-           rotateY(${window.config.rotationY})`
-        );
+        const transform = `${mainGroup.getAttribute('transform')} 
+                         rotate(${window.config.rotationZ}) 
+                         rotateX(${window.config.rotationX}) 
+                         rotateY(${window.config.rotationY})`;
+        mainGroup.setAttribute('transform', transform);
+        console.log('Applied rotations:', transform);
       }
       
       // Generate tree structure
+      console.log('Generating tree structure with size:', window.config.startingSize * scale);
       const treeGroup = this.generateTreeSVG(0, 0, window.config.startingSize * scale);
       mainGroup.appendChild(treeGroup);
       svg.appendChild(mainGroup);
@@ -104,6 +131,7 @@ class SVGExporter {
       // Convert SVG to string
       const serializer = new XMLSerializer();
       const svgString = serializer.serializeToString(svg);
+      console.log('SVG serialized, length:', svgString.length);
       
       // Create blob and download
       const blob = new Blob([svgString], { type: 'image/svg+xml' });
@@ -115,9 +143,10 @@ class SVGExporter {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      console.log('SVG download initiated');
     } catch (error) {
       console.error('Error in SVG export:', error);
-      throw error;
+      throw new Error(`SVG export failed: ${error.message}`);
     }
   }
 

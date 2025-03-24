@@ -191,4 +191,33 @@ h3 {
   margin: 0;
   color: #221F20;
   flex-grow: 1;
+}
+
+.export-button {
+  background-color: #F04E23;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.export-button:hover {
+  background-color: #d13d1a;
+}
+
+.export-status {
+  font-size: 14px;
+  color: #666;
+  margin-left: 10px;
+}
+
+#exportQuality {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  margin-left: 10px;
 } 
