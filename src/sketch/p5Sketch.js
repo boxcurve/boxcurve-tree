@@ -67,7 +67,6 @@ function sketch(p) {
   let renderTime = 0;
   let squaresDrawn = 0;
   let lastFrameTime = 0;
-  let frameRateValue = 0;
   
   // Define intermediate colors for gradient
   const intermediateColors = [
@@ -325,13 +324,10 @@ function sketch(p) {
 
   p.draw = function() {
     checkForUpdates();
-    // Calculate frame rate
-    frameRateValue = window.helpers.calculateFrameRate(lastFrameTime);
-    lastFrameTime = performance.now();
-    
     // Check for auto-rotation
     const currentTime = p.millis();
     const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
+    lastFrameTime = currentTime;
     
     // Update auto-rotation, auto-movement, and auto-angle if enabled
     if (window.config.autoRotate || window.config.autoMove || window.config.autoAngle || window.config.autoDepth) {
@@ -501,11 +497,6 @@ function sketch(p) {
     
     // Mark update as complete
     needsUpdate = false;
-    
-    // Draw debug info if enabled
-    if (window.config.debug) {
-      drawDebugInfo(p, frameRateValue);
-    }
     
     // Log success
     if (squaresDrawn > 0) {
@@ -812,37 +803,6 @@ function sketch(p) {
       Pixel Depth: ${Math.round(window.config.pixelDepth)} (Auto: ${window.config.autoDepth ? "On" : "Off"})<br>
       Light Angle: X:${Math.round(window.config.lightAngleX)}°, Y:${Math.round(window.config.lightAngleY)}° (Intensity: ${window.config.lightIntensity}%)
     `;
-  }
-  
-  function drawDebugInfo(p, frameRate) {
-    p.push();
-    p.translate(-p.width/2, -p.height/2);
-    p.fill(255);
-    p.noStroke();
-    p.textAlign(p.LEFT, p.TOP);
-    p.textSize(12);
-    
-    let y = 10;
-    const lineHeight = 15;
-    
-    p.text(`FPS: ${frameRate}`, 10, y);
-    y += lineHeight;
-    
-    p.text(`Depth: ${window.config.maxDepth}`, 10, y);
-    y += lineHeight;
-    
-    p.text(`Angle: ${Math.round(window.config.branchAngle)}°`, 10, y);
-    y += lineHeight;
-    
-    p.text(`Position: ${Math.round(window.config.xPosition)}, ${Math.round(window.config.yPosition)}, ${Math.round(window.config.zPosition)}`, 10, y);
-    y += lineHeight;
-    
-    p.text(`Rotation: ${Math.round(window.config.rotationX)}°, ${Math.round(window.config.rotationY)}°, ${Math.round(window.config.rotationZ)}°`, 10, y);
-    y += lineHeight;
-    
-    p.text(`Scale: ${window.config.scaleFactor.toFixed(2)}`, 10, y);
-    
-    p.pop();
   }
   
   // Event listeners
