@@ -1,3 +1,5 @@
+import { rgbToHex } from '../utils/helpers.js';
+
 // SVG Export Module
 class SVGExporter {
   constructor() {
@@ -246,16 +248,6 @@ class SVGExporter {
            `L ${points[1].x} ${points[1].y} ` +
            `L ${points[2].x} ${points[2].y} ` +
            `L ${points[3].x} ${points[3].y} Z`;
-  }
-
-  rgbToHex(rgb) {
-    if (Array.isArray(rgb)) {
-      return '#' + rgb.map(x => {
-        const hex = Math.round(x).toString(16);
-        return hex.length === 1 ? '0' + hex : hex;
-      }).join('');
-    }
-    return rgb;
   }
 }
 

@@ -1,3 +1,5 @@
+import { rgbToHex, hexToRgb } from '../utils/helpers.js';
+
 // Control Panel Module
 class ControlPanel {
   constructor() {
@@ -62,8 +64,7 @@ class ControlPanel {
           element.checked = window.config[key];
         } else if (element.type === 'color') {
           const color = window.config[key];
-          const hexColor = `#${(color[0] << 16 | color[1] << 8 | color[2]).toString(16).padStart(6, '0')}`;
-          element.value = hexColor;
+          element.value = rgbToHex(color);
         } else {
           element.value = window.config[key];
         }
@@ -153,14 +154,11 @@ class ControlPanel {
       const element = document.getElementById(id);
       if (element) {
         element.addEventListener('input', function() {
-          const hex = this.value.substring(1);
-          const rgb = [
-            parseInt(hex.substring(0, 2), 16),
-            parseInt(hex.substring(2, 4), 16),
-            parseInt(hex.substring(4, 6), 16)
-          ];
-          updateConfig(id.replace('Color', ''), rgb);
-          document.getElementById(`${id}Hex`).textContent = this.value.toUpperCase();
+          const rgb = hexToRgb(this.value);
+          if (rgb) {
+            updateConfig(id.replace('Color', ''), rgb);
+            document.getElementById(`${id}Hex`).textContent = this.value.toUpperCase();
+          }
         });
       }
     };

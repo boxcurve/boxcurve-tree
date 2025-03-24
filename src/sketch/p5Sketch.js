@@ -1,3 +1,5 @@
+import { lerp, constrain, map } from '../utils/helpers.js';
+
 // Global p5.js instance
 let p5Instance;
 
@@ -324,23 +326,18 @@ function sketch(p) {
 
   p.draw = function() {
     checkForUpdates();
-    // Check for auto-rotation
     const currentTime = p.millis();
-    const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
+    const deltaTime = (currentTime - lastFrameTime) / 1000;
     lastFrameTime = currentTime;
     
-    // Update auto-rotation, auto-movement, and auto-angle if enabled
     if (window.config.autoRotate || window.config.autoMove || window.config.autoAngle || window.config.autoDepth) {
       if (window.config.autoRotate) {
-        // Rotate primarily around Y axis, but also slightly around Z for a more interesting effect
         window.config.rotationY += window.config.rotationSpeed * deltaTime * 15;
         window.config.rotationZ += window.config.rotationSpeed * deltaTime * 5;
         
-        // Keep angles within -180 to 180 range
         if (window.config.rotationY > 180) window.config.rotationY -= 360;
         if (window.config.rotationZ > 180) window.config.rotationZ -= 360;
         
-        // Update UI sliders to reflect current rotation values
         document.getElementById('rotationY').value = window.config.rotationY;
         document.getElementById('rotationYValue').textContent = Math.round(window.config.rotationY) + '°';
         
@@ -349,31 +346,24 @@ function sketch(p) {
       }
       
       if (window.config.autoMove) {
-        // Update movement phase
         window.config.movePhase += window.config.moveSpeed * deltaTime;
         if (window.config.movePhase > Math.PI * 2) window.config.movePhase -= Math.PI * 2;
         
-        // Create smooth movement patterns
-        const xRange = 30; // Range of movement in percentage
-        const yRange = 8; // Significantly reduced y-range to eliminate jumps
+        const xRange = 30;
+        const yRange = 8;
         const zRange = 100;
         
-        // Calculate new positions using sine and cosine for smooth orbiting motion
         const newX = 50 + xRange * Math.sin(window.config.movePhase);
-        const newY = 50 + yRange * Math.cos(window.config.movePhase * 0.3); // Much slower frequency for Y
+        const newY = 50 + yRange * Math.cos(window.config.movePhase * 0.3);
         const newZ = zRange * Math.sin(window.config.movePhase * 0.5);
         
-        // Use separate lerp factors for X/Z vs Y for better control
         const xzLerpFactor = Math.min(0.05 * (60 * deltaTime), 0.2);
-        const yLerpFactor = Math.min(0.02 * (60 * deltaTime), 0.08); // Much gentler for Y
+        const yLerpFactor = Math.min(0.02 * (60 * deltaTime), 0.08);
         
-        // Apply movement with separate smoothing for each axis
-        window.config.xPosition = window.config.xPosition + (newX - window.config.xPosition) * xzLerpFactor;
-        window.config.yPosition = window.config.yPosition + (newY - window.config.yPosition) * yLerpFactor;
-        window.config.zPosition = window.config.zPosition + (newZ - window.config.zPosition) * xzLerpFactor;
+        window.config.xPosition = lerp(window.config.xPosition, newX, xzLerpFactor);
+        window.config.yPosition = lerp(window.config.yPosition, newY, yLerpFactor);
+        window.config.zPosition = lerp(window.config.zPosition, newZ, xzLerpFactor);
         
-        // Update UI sliders to reflect current position values
-        // Only update UI every few frames to reduce performance impact
         if (p.frameCount % 5 === 0) {
           document.getElementById('xPosition').value = Math.round(window.config.xPosition);
           document.getElementById('xPositionValue').textContent = Math.round(window.config.xPosition) + '%';
@@ -387,44 +377,31 @@ function sketch(p) {
       }
       
       if (window.config.autoAngle) {
-        // Update angle phase
         window.config.anglePhase += window.config.angleSpeed * deltaTime;
         if (window.config.anglePhase > Math.PI * 2) window.config.anglePhase -= Math.PI * 2;
         
-        // Create smooth angle oscillation between min and max values
         const minAngle = 15;
         const maxAngle = 75;
         const range = maxAngle - minAngle;
         
-        // Use sine wave to smoothly oscillate between min and max angle
         const newAngle = minAngle + range * (0.5 + 0.5 * Math.sin(window.config.anglePhase));
-        
-        // Apply new angle
         window.config.branchAngle = newAngle;
         
-        // Update UI slider to reflect current angle value
         document.getElementById('branchAngle').value = Math.round(newAngle);
         document.getElementById('branchAngleValue').textContent = Math.round(newAngle) + '°';
       }
       
-      // New code for auto-depth
       if (window.config.autoDepth) {
-        // Update depth phase
         window.config.depthPhase += 0.2 * deltaTime;
         if (window.config.depthPhase > Math.PI * 2) window.config.depthPhase -= Math.PI * 2;
         
-        // Create smooth depth oscillation
         const minDepth = 5;
         const maxDepth = 25;
         const rangeDepth = maxDepth - minDepth;
         
-        // Use sine wave to smoothly oscillate between min and max depth
         const newDepth = minDepth + rangeDepth * (0.5 + 0.5 * Math.sin(window.config.depthPhase));
-        
-        // Apply new depth
         window.config.pixelDepth = newDepth;
         
-        // Update UI slider to reflect current depth value
         document.getElementById('pixelDepth').value = Math.round(newDepth);
         document.getElementById('pixelDepthValue').textContent = Math.round(newDepth);
       }
@@ -439,39 +416,32 @@ function sketch(p) {
     
     p.clear();
     
-    // Map scroll position to determine depth and zoom
-    const scrollProgress = p.constrain(window.scrollY / (document.body.scrollHeight - p.windowHeight), 0, 1);
+    const scrollProgress = constrain(window.scrollY / (document.body.scrollHeight - p.windowHeight), 0, 1);
     
-    // Calculate the effective scroll progress for tree growth
     const growthRange = window.config.growthEnd - window.config.growthStart;
-    const normalizedScrollProgress = p.constrain(
-      p.map(scrollProgress * 100, window.config.growthStart, window.config.growthEnd, 0, 1), 
+    const normalizedScrollProgress = constrain(
+      map(scrollProgress * 100, window.config.growthStart, window.config.growthEnd, 0, 1), 
       0, 
       1
     );
     
-    // Map normalized scroll progress to determine depth
-    currentDepth = p.floor(p.map(normalizedScrollProgress, 0, 1, window.config.startDepth, window.config.maxDepth));
+    currentDepth = Math.floor(map(normalizedScrollProgress, 0, 1, window.config.startDepth, window.config.maxDepth));
+    targetZoom = map(scrollProgress, 0, 1, 1.0, window.config.maxZoom);
     
-    // Calculate target zoom based on scroll
-    targetZoom = p.map(scrollProgress, 0, 1, 1.0, window.config.maxZoom);
-    
-    // Smoothly adjust zoom
     zoomFactor += (targetZoom - zoomFactor) * window.config.zoomSpeed;
     
-    // Ensure zoom is exactly 1.0 when at the top of the page (with a small tolerance)
     if (scrollProgress < 0.01) {
-      zoomFactor = p.lerp(zoomFactor, 1.0, 0.1);  // Faster convergence to 1.0 when near top
+      zoomFactor = lerp(zoomFactor, 1.0, 0.1);
       if (Math.abs(zoomFactor - 1.0) < 0.01) {
-        zoomFactor = 1.0;  // Snap to exactly 1.0 when very close
+        zoomFactor = 1.0;
       }
     }
     
     p.push();
     
     // Calculate the position in screen coordinates
-    const xPos = p.map(window.config.xPosition, 0, 100, -p.width/2, p.width/2);
-    const yPos = p.map(window.config.yPosition, 0, 100, -p.height/2, p.height/2);
+    const xPos = map(window.config.xPosition, 0, 100, -p.width/2, p.width/2);
+    const yPos = map(window.config.yPosition, 0, 100, -p.height/2, p.height/2);
     
     // Apply position
     p.translate(xPos, yPos, window.config.zPosition);
@@ -752,9 +722,9 @@ function sketch(p) {
       case 'gradient':
       default:
         // Gradient fill based on depth
-        const colorIndex = p.constrain(p.map(depth, 0, window.config.maxDepth, 0, intermediateColors.length - 1), 0, intermediateColors.length - 1);
-        const lowerIndex = p.floor(colorIndex);
-        const upperIndex = p.ceil(colorIndex);
+        const colorIndex = constrain(map(depth, 0, window.config.maxDepth, 0, intermediateColors.length - 1), 0, intermediateColors.length - 1);
+        const lowerIndex = Math.floor(colorIndex);
+        const upperIndex = Math.ceil(colorIndex);
         const blendFactor = colorIndex - lowerIndex;
         
         if (lowerIndex === upperIndex) {
@@ -762,14 +732,14 @@ function sketch(p) {
         } else {
           // Blend between colors
           fillColor = [
-            p.lerp(intermediateColors[lowerIndex][0], intermediateColors[upperIndex][0], blendFactor),
-            p.lerp(intermediateColors[lowerIndex][1], intermediateColors[upperIndex][1], blendFactor),
-            p.lerp(intermediateColors[lowerIndex][2], intermediateColors[upperIndex][2], blendFactor)
+            lerp(intermediateColors[lowerIndex][0], intermediateColors[upperIndex][0], blendFactor),
+            lerp(intermediateColors[lowerIndex][1], intermediateColors[upperIndex][1], blendFactor),
+            lerp(intermediateColors[lowerIndex][2], intermediateColors[upperIndex][2], blendFactor)
           ];
         }
         
         // Progressively remove outline as we scroll
-        const outlineOpacity = p.map(scrollProgress, 0.3, 0.7, 255, 0);
+        const outlineOpacity = map(scrollProgress, 0.3, 0.7, 255, 0);
         outlineColor = (outlineOpacity > 0) ? [...window.config.brandColor, outlineOpacity] : null;
         break;
     }
