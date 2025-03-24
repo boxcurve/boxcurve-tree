@@ -16,7 +16,7 @@ class SVGExporter {
 
     if (exportButton) {
       exportButton.addEventListener('click', () => {
-        console.log('Export button clicked');
+        window.helpers.debugLog('Export button clicked');
         if (exportStatus) exportStatus.textContent = 'Generating SVG...';
         
         // Verify config is available
@@ -27,11 +27,11 @@ class SVGExporter {
         }
 
         const quality = exportQuality ? exportQuality.value : 'standard';
-        console.log('Export quality:', quality);
+        window.helpers.debugLog('Export quality:', quality);
         
         this.exportTreeAsSVG(quality)
           .then(() => {
-            console.log('SVG export completed successfully');
+            window.helpers.debugLog('SVG export completed successfully');
             if (exportStatus) {
               exportStatus.textContent = 'SVG exported successfully!';
               setTimeout(() => {
@@ -49,32 +49,29 @@ class SVGExporter {
             }
           });
       });
-      console.log('Export button event listener added');
-    } else {
-      console.error('Export button not found in DOM');
     }
   }
 
   async exportTreeAsSVG(quality = 'standard') {
-    console.log('Starting SVG export with quality:', quality);
+    window.helpers.debugLog('Starting SVG export with quality:', quality);
     try {
       // Create SVG element
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      console.log('SVG element created');
+      const svg = window.helpers.createSVGElement('svg');
       
       // Set SVG attributes based on quality
       const scale = quality === 'high' ? 2 : 1;
       const width = window.innerWidth * scale;
       const height = window.innerHeight * scale;
       
-      svg.setAttribute('width', width);
-      svg.setAttribute('height', height);
-      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      console.log('SVG attributes set:', { width, height, scale });
+      window.helpers.setSVGAttributes(svg, {
+        width: width,
+        height: height,
+        viewBox: `0 0 ${width} ${height}`,
+        xmlns: 'http://www.w3.org/2000/svg'
+      });
       
       // Add metadata
-      const metadata = document.createElementNS('http://www.w3.org/2000/svg', 'metadata');
+      const metadata = window.helpers.createSVGElement('metadata');
       metadata.textContent = JSON.stringify({
         title: 'Boxcurve Tree',
         creator: 'Boxcurve Tree Generator',
@@ -82,35 +79,38 @@ class SVGExporter {
         config: window.config
       });
       svg.appendChild(metadata);
-      console.log('Metadata added');
       
       // Create definitions for gradients
-      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      const defs = window.helpers.createSVGElement('defs');
+      const gradient = window.helpers.createSVGElement('linearGradient');
       
-      // Add base gradient
-      const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-      gradient.id = 'treeGradient';
-      gradient.setAttribute('gradientTransform', 'rotate(90)');
+      window.helpers.setSVGAttributes(gradient, {
+        id: 'treeGradient',
+        gradientTransform: 'rotate(90)'
+      });
       
       const stops = [
-        { offset: '0%', color: this.rgbToHex(window.config.baseColor) },
-        { offset: '100%', color: this.rgbToHex(window.config.brandColor) }
+        { offset: '0%', color: window.helpers.rgbToHex(window.config.baseColor) },
+        { offset: '100%', color: window.helpers.rgbToHex(window.config.brandColor) }
       ];
       
       stops.forEach(stop => {
-        const stopElement = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-        stopElement.setAttribute('offset', stop.offset);
-        stopElement.setAttribute('stop-color', stop.color);
+        const stopElement = window.helpers.createSVGElement('stop');
+        window.helpers.setSVGAttributes(stopElement, {
+          offset: stop.offset,
+          'stop-color': stop.color
+        });
         gradient.appendChild(stopElement);
       });
       
       defs.appendChild(gradient);
       svg.appendChild(defs);
-      console.log('Gradient definitions added');
       
       // Create main group for the tree with current transformations
-      const mainGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      mainGroup.setAttribute('transform', `translate(${width/2} ${height/2})`);
+      const mainGroup = window.helpers.createSVGElement('g');
+      window.helpers.setSVGAttributes(mainGroup, {
+        transform: `translate(${width/2} ${height/2})`
+      });
       
       // Apply current rotations
       if (window.config.rotationX || window.config.rotationY || window.config.rotationZ) {
@@ -119,21 +119,17 @@ class SVGExporter {
                          rotateX(${window.config.rotationX}) 
                          rotateY(${window.config.rotationY})`;
         mainGroup.setAttribute('transform', transform);
-        console.log('Applied rotations:', transform);
       }
       
       // Generate tree structure
-      console.log('Generating tree structure with size:', window.config.startingSize * scale);
       const treeGroup = this.generateTreeSVG(0, 0, window.config.startingSize * scale);
       mainGroup.appendChild(treeGroup);
       svg.appendChild(mainGroup);
       
-      // Convert SVG to string
+      // Convert SVG to string and download
       const serializer = new XMLSerializer();
       const svgString = serializer.serializeToString(svg);
-      console.log('SVG serialized, length:', svgString.length);
       
-      // Create blob and download
       const blob = new Blob([svgString], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -143,7 +139,6 @@ class SVGExporter {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      console.log('SVG download initiated');
     } catch (error) {
       console.error('Error in SVG export:', error);
       throw new Error(`SVG export failed: ${error.message}`);
@@ -151,7 +146,7 @@ class SVGExporter {
   }
 
   generateTreeSVG(x, y, size, depth = 0) {
-    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const group = window.helpers.createSVGElement('g');
     
     if (depth >= window.config.maxDepth) return group;
     
@@ -159,20 +154,20 @@ class SVGExporter {
     const points = this.calculateSquarePoints(x, y, size);
     
     // Create and style the square
-    const square = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const square = window.helpers.createSVGElement('path');
     square.setAttribute('d', this.pointsToPath(points));
     
     // Apply styles based on config
     if (window.config.fillType === 'gradient') {
       square.setAttribute('fill', 'url(#treeGradient)');
     } else if (window.config.fillType === 'solid') {
-      square.setAttribute('fill', this.rgbToHex(depth === 0 ? window.config.baseColor : window.config.brandColor));
+      square.setAttribute('fill', window.helpers.rgbToHex(depth === 0 ? window.config.baseColor : window.config.brandColor));
     } else {
       square.setAttribute('fill', 'none');
     }
     
     if (window.config.fillType === 'outline' || window.config.strokeWeight > 0) {
-      square.setAttribute('stroke', this.rgbToHex(window.config.brandColor));
+      square.setAttribute('stroke', window.helpers.rgbToHex(window.config.brandColor));
       square.setAttribute('stroke-width', window.config.strokeWeight);
     }
     
@@ -192,10 +187,9 @@ class SVGExporter {
       );
       
       // Apply rotation to branch
-      branchGroup.setAttribute(
-        'transform',
-        `rotate(${branch.angle} ${branch.x} ${branch.y})`
-      );
+      window.helpers.setSVGAttributes(branchGroup, {
+        transform: `rotate(${branch.angle} ${branch.x} ${branch.y})`
+      });
       
       group.appendChild(branchGroup);
     });
@@ -215,7 +209,7 @@ class SVGExporter {
 
   calculateBranchPoints(points, angle) {
     const branches = [];
-    const angleRad = (angle * Math.PI) / 180;
+    const angleRad = window.helpers.degToRad(angle);
     
     // Calculate branch points and angles
     const p1 = points[0];
@@ -246,16 +240,6 @@ class SVGExporter {
            `L ${points[1].x} ${points[1].y} ` +
            `L ${points[2].x} ${points[2].y} ` +
            `L ${points[3].x} ${points[3].y} Z`;
-  }
-
-  rgbToHex(rgb) {
-    if (Array.isArray(rgb)) {
-      return '#' + rgb.map(x => {
-        const hex = Math.round(x).toString(16);
-        return hex.length === 1 ? '0' + hex : hex;
-      }).join('');
-    }
-    return rgb;
   }
 }
 

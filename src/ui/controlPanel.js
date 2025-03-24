@@ -1,241 +1,202 @@
 // Control Panel Module
 class ControlPanel {
   constructor() {
+    window.helpers.debugLog('Initializing Control Panel');
+    this.visible = true;
     this.needsUpdate = false;
-    this.setupControlPanelVisibility();
+    this.initialize();
+  }
+
+  initialize() {
     this.setupControlPanel();
-  }
-
-  setupControlPanelVisibility() {
-    const controlPanel = document.getElementById('controlPanel');
-    const showPanelButton = document.getElementById('showPanel');
-    const hidePanelButton = document.getElementById('hidePanel');
-
-    if (showPanelButton) {
-      showPanelButton.addEventListener('click', () => {
-        if (controlPanel) {
-          controlPanel.style.display = 'block';
-          showPanelButton.style.display = 'none';
-        }
-      });
-    }
-
-    if (hidePanelButton) {
-      hidePanelButton.addEventListener('click', () => {
-        if (controlPanel) {
-          controlPanel.style.display = 'none';
-          showPanelButton.style.display = 'block';
-        }
-      });
-    }
-  }
-
-  // Function to load saved preset
-  loadSavedPreset() {
-    const savedPreset = localStorage.getItem('boxcurveTreePreset');
-    if (savedPreset) {
-      try {
-        const preset = JSON.parse(savedPreset);
-        Object.assign(window.config, preset);
-        this.updateControlsFromConfig();
-      } catch (e) {
-        console.error('Error loading saved preset:', e);
-      }
-    }
-  }
-
-  // Function to save current settings as preset
-  saveCurrentPreset() {
-    try {
-      localStorage.setItem('boxcurveTreePreset', JSON.stringify(window.config));
-    } catch (e) {
-      console.error('Error saving preset:', e);
-    }
-  }
-
-  // Function to update all control values from config
-  updateControlsFromConfig() {
-    Object.keys(window.config).forEach(key => {
-      const element = document.getElementById(key);
-      if (element) {
-        if (element.type === 'checkbox') {
-          element.checked = window.config[key];
-        } else if (element.type === 'color') {
-          const color = window.config[key];
-          const hexColor = `#${(color[0] << 16 | color[1] << 8 | color[2]).toString(16).padStart(6, '0')}`;
-          element.value = hexColor;
-        } else {
-          element.value = window.config[key];
-        }
-        
-        // Update associated number input and value display if they exist
-        const numberElement = document.getElementById(`${key}Number`);
-        if (numberElement) {
-          numberElement.value = window.config[key];
-        }
-        
-        const valueElement = document.getElementById(`${key}Value`);
-        if (valueElement) {
-          let displayValue = window.config[key];
-          // Add units where appropriate
-          if (key.toLowerCase().includes('angle')) {
-            displayValue += '°';
-          } else if (key.toLowerCase().includes('position') && !key.includes('z')) {
-            displayValue += '%';
-          }
-          valueElement.textContent = displayValue;
-        }
-      }
-    });
-  }
-
-  // Function to setup control panel event listeners
-  setupControlPanel() {
-    // Helper function to update config and trigger redraw
-    const updateConfig = (key, value) => {
-      window.config[key] = value;
-      this.needsUpdate = true;
-      this.saveCurrentPreset();
-    };
-
-    // Helper function to handle number inputs
-    const setupNumberInput = (id, isInteger = true) => {
-      const element = document.getElementById(id);
-      const numberElement = document.getElementById(`${id}Number`);
-      const valueElement = document.getElementById(`${id}Value`);
-      
-      if (element && numberElement) {
-        // Sync the number input with the range input
-        element.addEventListener('input', function() {
-          const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
-          numberElement.value = value;
-          if (valueElement) {
-            let displayValue = value;
-            if (id.toLowerCase().includes('angle')) {
-              displayValue += '°';
-            } else if (id.toLowerCase().includes('position') && !id.includes('z')) {
-              displayValue += '%';
-            }
-            valueElement.textContent = displayValue;
-          }
-          updateConfig(id, value);
-        });
-
-        numberElement.addEventListener('input', function() {
-          const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
-          element.value = value;
-          if (valueElement) {
-            let displayValue = value;
-            if (id.toLowerCase().includes('angle')) {
-              displayValue += '°';
-            } else if (id.toLowerCase().includes('position') && !id.includes('z')) {
-              displayValue += '%';
-            }
-            valueElement.textContent = displayValue;
-          }
-          updateConfig(id, value);
-        });
-      }
-    };
-
-    // Helper function to handle checkbox inputs
-    const setupCheckbox = (id) => {
-      const element = document.getElementById(id);
-      if (element) {
-        element.addEventListener('change', function() {
-          updateConfig(id, this.checked);
-        });
-      }
-    };
-
-    // Helper function to handle color inputs
-    const setupColorInput = (id) => {
-      const element = document.getElementById(id);
-      if (element) {
-        element.addEventListener('input', function() {
-          const hex = this.value.substring(1);
-          const rgb = [
-            parseInt(hex.substring(0, 2), 16),
-            parseInt(hex.substring(2, 4), 16),
-            parseInt(hex.substring(4, 6), 16)
-          ];
-          updateConfig(id.replace('Color', ''), rgb);
-          document.getElementById(`${id}Hex`).textContent = this.value.toUpperCase();
-        });
-      }
-    };
-
-    // Setup all number inputs
-    setupNumberInput('maxDepth', true);
-    setupNumberInput('startDepth', true);
-    setupNumberInput('branchAngle', true);
-    setupNumberInput('angleSpeed', false);
-    setupNumberInput('scaleFactor', false);
-    setupNumberInput('xPosition', true);
-    setupNumberInput('yPosition', true);
-    setupNumberInput('zPosition', true);
-    setupNumberInput('moveSpeed', false);
-    setupNumberInput('startingSize', true);
-    setupNumberInput('rotationX', true);
-    setupNumberInput('rotationY', true);
-    setupNumberInput('rotationZ', true);
-    setupNumberInput('rotationSpeed', false);
-    setupNumberInput('maxZoom', false);
-    setupNumberInput('zoomSpeed', false);
-    setupNumberInput('growthStart', true);
-    setupNumberInput('growthEnd', true);
-    setupNumberInput('strokeWeight', true);
-    setupNumberInput('pixelDepth', true);
-    setupNumberInput('lightAngleX', true);
-    setupNumberInput('lightAngleY', true);
-    setupNumberInput('lightIntensity', true);
-
-    // Setup all checkboxes
-    setupCheckbox('autoAngle');
-    setupCheckbox('autoMove');
-    setupCheckbox('autoRotate');
-    setupCheckbox('autoDepth');
-    setupCheckbox('depthByLevel');
-    setupCheckbox('enableLighting');
-
-    // Setup color inputs
-    setupColorInput('baseColor');
-    setupColorInput('brandColor');
-
-    // Setup fill type selector
-    const fillTypeSelect = document.getElementById('fillType');
-    if (fillTypeSelect) {
-      fillTypeSelect.addEventListener('change', function() {
-        updateConfig('fillType', this.value);
-      });
-    }
-
-    // Setup preset buttons
-    ['preset1', 'preset2', 'preset3'].forEach(presetId => {
-      const button = document.getElementById(presetId);
-      if (button) {
-        button.addEventListener('click', () => {
-          Object.assign(window.config, window.presets[presetId]);
-          this.updateControlsFromConfig();
-          this.needsUpdate = true;
-        });
-      }
-    });
-
-    // Initial update of all controls
+    this.loadPresets();
     this.updateControlsFromConfig();
+    this.setupEventListeners();
   }
 
-  // Method to check if an update is needed
-  isUpdateNeeded() {
-    return this.needsUpdate;
+  setupControlPanel() {
+    const panel = document.getElementById('controlPanel');
+    const toggleButton = document.getElementById('togglePanel');
+    
+    if (toggleButton && panel) {
+      toggleButton.addEventListener('click', () => {
+        this.visible = !this.visible;
+        panel.style.display = this.visible ? 'block' : 'none';
+        toggleButton.textContent = this.visible ? 'Hide Controls' : 'Show Controls';
+      });
+    }
   }
 
-  // Method to reset the update flag
-  resetUpdateFlag() {
-    this.needsUpdate = false;
+  loadPresets() {
+    try {
+      const savedPresets = localStorage.getItem('treePresets');
+      if (savedPresets) {
+        const presets = JSON.parse(savedPresets);
+        const presetSelect = document.getElementById('presetSelect');
+        
+        if (presetSelect) {
+          // Clear existing options
+          presetSelect.innerHTML = '<option value="">Select Preset</option>';
+          
+          // Add saved presets
+          Object.keys(presets).forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            presetSelect.appendChild(option);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading presets:', error);
+    }
+  }
+
+  updateControlsFromConfig() {
+    window.helpers.debugLog('Updating controls from config');
+    
+    // Update number inputs
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+      const configKey = input.id;
+      if (window.config && configKey in window.config) {
+        input.value = window.config[configKey];
+      }
+    });
+    
+    // Update range inputs
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+      const configKey = input.id;
+      if (window.config && configKey in window.config) {
+        input.value = window.config[configKey];
+      }
+    });
+    
+    // Update color inputs
+    document.querySelectorAll('input[type="color"]').forEach(input => {
+      const configKey = input.id;
+      if (window.config && configKey in window.config) {
+        input.value = window.helpers.rgbToHex(window.config[configKey]);
+      }
+    });
+    
+    // Update checkboxes
+    document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      const configKey = input.id;
+      if (window.config && configKey in window.config) {
+        input.checked = window.config[configKey];
+      }
+    });
+  }
+
+  setupEventListeners() {
+    // Number input event listeners
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+      input.addEventListener('change', () => {
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+          window.config[input.id] = window.helpers.clamp(
+            value,
+            parseFloat(input.min || -Infinity),
+            parseFloat(input.max || Infinity)
+          );
+          this.needsUpdate = true;
+        }
+      });
+    });
+    
+    // Range input event listeners
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+      input.addEventListener('input', () => {
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+          window.config[input.id] = value;
+          
+          // Update corresponding number input if it exists
+          const numberInput = document.querySelector(`input[type="number"][id="${input.id}"]`);
+          if (numberInput) {
+            numberInput.value = value;
+          }
+          
+          this.needsUpdate = true;
+        }
+      });
+    });
+    
+    // Color input event listeners
+    document.querySelectorAll('input[type="color"]').forEach(input => {
+      input.addEventListener('input', () => {
+        window.config[input.id] = window.helpers.hexToRgb(input.value);
+        this.needsUpdate = true;
+      });
+    });
+    
+    // Checkbox event listeners
+    document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.addEventListener('change', () => {
+        window.config[input.id] = input.checked;
+        this.needsUpdate = true;
+      });
+    });
+    
+    // Preset management
+    const savePresetButton = document.getElementById('savePreset');
+    const presetNameInput = document.getElementById('presetName');
+    const presetSelect = document.getElementById('presetSelect');
+    
+    if (savePresetButton && presetNameInput && presetSelect) {
+      // Save preset
+      savePresetButton.addEventListener('click', () => {
+        const name = presetNameInput.value.trim();
+        if (name) {
+          try {
+            let presets = {};
+            const savedPresets = localStorage.getItem('treePresets');
+            if (savedPresets) {
+              presets = JSON.parse(savedPresets);
+            }
+            
+            presets[name] = { ...window.config };
+            localStorage.setItem('treePresets', JSON.stringify(presets));
+            
+            // Add new preset to select
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            presetSelect.appendChild(option);
+            
+            // Clear input
+            presetNameInput.value = '';
+            
+            window.helpers.debugLog('Preset saved:', name);
+          } catch (error) {
+            console.error('Error saving preset:', error);
+          }
+        }
+      });
+      
+      // Load preset
+      presetSelect.addEventListener('change', () => {
+        const name = presetSelect.value;
+        if (name) {
+          try {
+            const savedPresets = localStorage.getItem('treePresets');
+            if (savedPresets) {
+              const presets = JSON.parse(savedPresets);
+              if (presets[name]) {
+                Object.assign(window.config, presets[name]);
+                this.updateControlsFromConfig();
+                this.needsUpdate = true;
+                window.helpers.debugLog('Preset loaded:', name);
+              }
+            }
+          } catch (error) {
+            console.error('Error loading preset:', error);
+          }
+        }
+      });
+    }
   }
 }
 
-// Create and export a singleton instance
+// Create singleton instance
 window.controlPanel = new ControlPanel(); 
