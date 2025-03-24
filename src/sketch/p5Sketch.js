@@ -581,7 +581,7 @@ function sketch(p) {
         } else {
           p.stroke(style.outline[0], style.outline[1], style.outline[2]);
         }
-        p.strokeWeight(window.config.strokeWeight);
+        p.strokeWeight(parseInt(window.config.strokeWeight));
       } else {
         p.noStroke();
       }
@@ -611,6 +611,9 @@ function sketch(p) {
         const b = style.fill[2] * sideShadeFactor;
         p.fill(r, g, b);
       }
+      if (style.outline) {
+        p.strokeWeight(parseInt(window.config.strokeWeight));
+      }
       p.vertex(p1[0], p1[1], 0);
       p.vertex(p4[0], p4[1], 0);
       p.vertex(p4[0], p4[1], backZ);
@@ -619,6 +622,9 @@ function sketch(p) {
       
       // Right face
       p.beginShape();
+      if (style.outline) {
+        p.strokeWeight(parseInt(window.config.strokeWeight));
+      }
       p.vertex(p2[0], p2[1], 0);
       p.vertex(p3[0], p3[1], 0);
       p.vertex(p3[0], p3[1], backZ);
@@ -634,6 +640,9 @@ function sketch(p) {
         const b = style.fill[2] * topShadeFactor;
         p.fill(r, g, b);
       }
+      if (style.outline) {
+        p.strokeWeight(parseInt(window.config.strokeWeight));
+      }
       p.vertex(p1[0], p1[1], 0);
       p.vertex(p2[0], p2[1], 0);
       p.vertex(p2[0], p2[1], backZ);
@@ -642,6 +651,9 @@ function sketch(p) {
       
       // Bottom face
       p.beginShape();
+      if (style.outline) {
+        p.strokeWeight(parseInt(window.config.strokeWeight));
+      }
       p.vertex(p4[0], p4[1], 0);
       p.vertex(p3[0], p3[1], 0);
       p.vertex(p3[0], p3[1], backZ);
@@ -658,6 +670,9 @@ function sketch(p) {
           const g = style.fill[1] * backShadeFactor;
           const b = style.fill[2] * backShadeFactor;
           p.fill(r, g, b);
+        }
+        if (style.outline) {
+          p.strokeWeight(parseInt(window.config.strokeWeight));
         }
         p.vertex(p1[0], p1[1], backZ);
         p.vertex(p2[0], p2[1], backZ);
