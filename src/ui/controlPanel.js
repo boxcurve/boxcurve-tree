@@ -99,7 +99,8 @@ class ControlPanel {
       this.saveCurrentPreset();
       
       // Dispatch color change event if a color was updated
-      if (key === 'base' || key === 'brand') {
+      if (key === 'baseColor' || key === 'brandColor') {
+        console.log('Color updated:', key, value);
         window.dispatchEvent(new Event('colorChanged'));
       }
     };
@@ -161,8 +162,7 @@ class ControlPanel {
         element.addEventListener('input', function() {
           const rgb = hexToRgb(this.value);
           if (rgb) {
-            const colorKey = id.replace('Color', '');
-            updateConfig(colorKey, rgb);
+            updateConfig(id, rgb);
             document.getElementById(`${id}Hex`).textContent = this.value.toUpperCase();
           }
         });

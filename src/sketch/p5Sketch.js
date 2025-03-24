@@ -72,6 +72,10 @@ function sketch(p) {
   
   // Function to update intermediate colors when base or brand colors change
   function updateIntermediateColors() {
+    console.log('Updating intermediate colors');
+    console.log('Base color:', window.config.baseColor);
+    console.log('Brand color:', window.config.brandColor);
+    
     window.config.intermediateColors = [
       window.config.baseColor,
       [80, 30, 80],  // Purple
@@ -89,7 +93,9 @@ function sketch(p) {
       try {
         const preset = JSON.parse(savedPreset);
         Object.assign(window.config, preset);
-        updateControlsFromConfig();
+        if (window.controlPanel) {
+          window.controlPanel.updateControlsFromConfig();
+        }
       } catch (e) {
         console.error('Error loading saved preset:', e);
       }
@@ -146,7 +152,7 @@ function sketch(p) {
   function setupControlPanel() {
     // Add color change listener
     window.addEventListener('colorChanged', function() {
-      console.log('Color change detected');
+      console.log('Color change event received');
       updateIntermediateColors();
       needsUpdate = true;
     });
