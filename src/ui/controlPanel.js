@@ -97,6 +97,11 @@ class ControlPanel {
       window.config[key] = value;
       this.needsUpdate = true;
       this.saveCurrentPreset();
+      
+      // Dispatch color change event if a color was updated
+      if (key === 'base' || key === 'brand') {
+        window.dispatchEvent(new Event('colorChanged'));
+      }
     };
 
     // Helper function to handle number inputs
@@ -156,7 +161,8 @@ class ControlPanel {
         element.addEventListener('input', function() {
           const rgb = hexToRgb(this.value);
           if (rgb) {
-            updateConfig(id.replace('Color', ''), rgb);
+            const colorKey = id.replace('Color', '');
+            updateConfig(colorKey, rgb);
             document.getElementById(`${id}Hex`).textContent = this.value.toUpperCase();
           }
         });

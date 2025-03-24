@@ -25,6 +25,13 @@ window.config = {
   // Colors
   baseColor: [20, 40, 100], // Navy Blue #142864
   brandColor: [240, 78, 35], // Boxcurve Orange #F04E23
+  intermediateColors: [
+    [20, 40, 100], // baseColor
+    [80, 30, 80],  // Purple
+    [120, 40, 70], // Maroon
+    [180, 60, 60], // Dark Red
+    [240, 78, 35]  // brandColor
+  ],
   fillType: 'outline',
   strokeWeight: 4,
   

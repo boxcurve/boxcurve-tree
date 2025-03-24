@@ -70,19 +70,15 @@ function sketch(p) {
   let squaresDrawn = 0;
   let lastFrameTime = 0;
   
-  // Define intermediate colors for gradient
-  const intermediateColors = [
-    window.config.baseColor,
-    [80, 30, 80],  // Purple
-    [120, 40, 70], // Maroon
-    [180, 60, 60], // Dark Red
-    window.config.brandColor
-  ];
-  
   // Function to update intermediate colors when base or brand colors change
   function updateIntermediateColors() {
-    intermediateColors[0] = window.config.baseColor;
-    intermediateColors[4] = window.config.brandColor;
+    window.config.intermediateColors = [
+      window.config.baseColor,
+      [80, 30, 80],  // Purple
+      [120, 40, 70], // Maroon
+      [180, 60, 60], // Dark Red
+      window.config.brandColor
+    ];
     needsUpdate = true;
   }
   
@@ -148,6 +144,13 @@ function sketch(p) {
 
   // Function to setup control panel event listeners
   function setupControlPanel() {
+    // Add color change listener
+    window.addEventListener('colorChanged', function() {
+      console.log('Color change detected');
+      updateIntermediateColors();
+      needsUpdate = true;
+    });
+
     // Helper function to update config and trigger redraw
     function updateConfig(key, value) {
       window.config[key] = value;
@@ -722,19 +725,19 @@ function sketch(p) {
       case 'gradient':
       default:
         // Gradient fill based on depth
-        const colorIndex = constrain(map(depth, 0, window.config.maxDepth, 0, intermediateColors.length - 1), 0, intermediateColors.length - 1);
+        const colorIndex = constrain(map(depth, 0, window.config.maxDepth, 0, window.config.intermediateColors.length - 1), 0, window.config.intermediateColors.length - 1);
         const lowerIndex = Math.floor(colorIndex);
         const upperIndex = Math.ceil(colorIndex);
         const blendFactor = colorIndex - lowerIndex;
         
         if (lowerIndex === upperIndex) {
-          fillColor = intermediateColors[lowerIndex];
+          fillColor = window.config.intermediateColors[lowerIndex];
         } else {
           // Blend between colors
           fillColor = [
-            lerp(intermediateColors[lowerIndex][0], intermediateColors[upperIndex][0], blendFactor),
-            lerp(intermediateColors[lowerIndex][1], intermediateColors[upperIndex][1], blendFactor),
-            lerp(intermediateColors[lowerIndex][2], intermediateColors[upperIndex][2], blendFactor)
+            lerp(window.config.intermediateColors[lowerIndex][0], window.config.intermediateColors[upperIndex][0], blendFactor),
+            lerp(window.config.intermediateColors[lowerIndex][1], window.config.intermediateColors[upperIndex][1], blendFactor),
+            lerp(window.config.intermediateColors[lowerIndex][2], window.config.intermediateColors[upperIndex][2], blendFactor)
           ];
         }
         
@@ -747,7 +750,7 @@ function sketch(p) {
     return {
       fill: fillColor,
       outline: outlineColor,
-      fillType: window.config.fillType // Pass the fill type to use in drawCube function
+      fillType: window.config.fillType
     };
   }
   
