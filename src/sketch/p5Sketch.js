@@ -314,7 +314,16 @@ function sketch(p) {
     console.log("Boxcurve Tree setup complete");
   };
   
+  // Update function to check if control panel needs update
+  function checkForUpdates() {
+    if (window.controlPanel && window.controlPanel.isUpdateNeeded()) {
+      needsUpdate = true;
+      window.controlPanel.resetUpdateFlag();
+    }
+  }
+
   p.draw = function() {
+    checkForUpdates();
     // Check for auto-rotation
     const currentTime = p.millis();
     const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
