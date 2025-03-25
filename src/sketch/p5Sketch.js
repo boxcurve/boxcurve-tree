@@ -449,19 +449,62 @@ function sketch(p) {
     }
 
     const metrics = {
-      fps,
-      renderTime,
-      squaresDrawn,
-      scrollProgress,
-      zoomFactor,
-      currentDepth
+      fps: `${fps} FPS`,
+      renderTime: `${renderTime.toFixed(2)}ms`,
+      squaresDrawn: squaresDrawn,
+      scrollProgress: `${(scrollProgress * 100).toFixed(1)}%`,
+      zoomFactor: zoomFactor.toFixed(2),
+      currentDepth: currentDepth,
+      position: {
+        x: `${window.config.xPosition.toFixed(1)}%`,
+        y: `${window.config.yPosition.toFixed(1)}%`,
+        z: window.config.zPosition.toFixed(1)
+      },
+      rotation: {
+        x: `${window.config.rotationX.toFixed(1)}°`,
+        y: `${window.config.rotationY.toFixed(1)}°`,
+        z: `${window.config.rotationZ.toFixed(1)}°`
+      }
     };
 
     const metricsElement = document.getElementById('metrics');
     if (metricsElement) {
       metricsElement.innerHTML = `
         <h4>Debug Information</h4>
-        <pre>${JSON.stringify(metrics, null, 2)}</pre>
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="metric-label">FPS:</span>
+            <span class="metric-value">${metrics.fps}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Render Time:</span>
+            <span class="metric-value">${metrics.renderTime}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Squares:</span>
+            <span class="metric-value">${metrics.squaresDrawn}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Scroll:</span>
+            <span class="metric-value">${metrics.scrollProgress}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Zoom:</span>
+            <span class="metric-value">${metrics.zoomFactor}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Depth:</span>
+            <span class="metric-value">${metrics.currentDepth}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Position:</span>
+            <span class="metric-value">X: ${metrics.position.x} Y: ${metrics.position.y} Z: ${metrics.position.z}</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Rotation:</span>
+            <span class="metric-value">X: ${metrics.rotation.x} Y: ${metrics.rotation.y} Z: ${metrics.rotation.z}</span>
+          </div>
+        </div>
       `;
     }
   }
@@ -522,13 +565,18 @@ function sketch(p) {
         window.config.branchAngle += window.config.angleSpeed * deltaTime;
       }
 
+      // Reset squares drawn counter
+      squaresDrawn = 0;
+
       // Draw tree
       p.push();
-      p.translate(
-        p.map(window.config.xPosition, 0, 100, -p.width/2, p.width/2),
-        p.map(window.config.yPosition, 0, 100, -p.height/2, p.height/2),
-        window.config.zPosition
-      );
+      
+      // Calculate center position
+      const centerX = p.map(window.config.xPosition, 0, 100, -p.width/2, p.width/2);
+      const centerY = p.map(window.config.yPosition, 0, 100, -p.height/2, p.height/2);
+      
+      // Apply transformations
+      p.translate(centerX, centerY, window.config.zPosition);
       p.rotateX(p.radians(window.config.rotationX));
       p.rotateY(p.radians(window.config.rotationY));
       p.rotateZ(p.radians(window.config.rotationZ));
@@ -560,4 +608,314 @@ function sketch(p) {
       debug.error('Failed to resize canvas:', error);
     }
   };
+
+  // Function to draw the boxcurve tree
+  function drawBoxcurveTree(x, y, size, depth, scrollProgress) {
+    debug.info(`Drawing boxcurve tree at (${x}, ${y}) with size ${size} and depth ${depth}`);
+    try {
+      p.push();
+      p.translate(x, y);
+      
+      if (depth > 0) {
+        const p1 = [-size / 2, -size / 2];
+        const p2 = [size / 2, -size / 2];
+        generateTree([p1, p2], 0, depth, scrollProgress);
+      }
+      
+      p.pop();
+    } catch (error) {
+      debug.error('Error in drawBoxcurveTree:', error);
+    }
+  }
+
+  // Function to generate the tree structure
+  function generateTree(coordSet, depth, maxDepth, scrollProgress) {
+    if (depth >= maxDepth) return;
+    
+    try {
+      const p1 = coordSet[0];
+      const p2 = coordSet[1];
+      
+      // Draw the cube (square)
+      const cubeCoordSet = drawCube(p1, p2, depth, scrollProgress);
+      
+      // Calculate next squares
+      const size = p.dist(p1[0], p1[1], p2[0], p2[1]);
+      const nextSize = size * window.config.scaleFactor;
+      
+      // Draw the triangle for branch connection
+      const triangleCoordSets = drawTriangle(cubeCoordSet[0], cubeCoordSet[1], depth, window.config.branchAngle, mirror, scrollProgress);
+      
+      // Continue with recursion for next branches
+      for (let nextCoordSet of triangleCoordSets) {
+        generateTree(nextCoordSet, depth + 1, maxDepth, scrollProgress);
+      }
+    } catch (error) {
+      debug.error('Error in generateTree:', error);
+    }
+  }
+
+  // Function to draw a cube
+  function drawCube(p1, p2, depth, scrollProgress) {
+    try {
+      // Calculate the other two points of the square
+      const p1_to_p2 = [p1[0] - p2[0], p1[1] - p2[1]];
+      const p1_to_p4 = [-p1_to_p2[1], p1_to_p2[0]];
+      
+      const p3 = [p2[0] + p1_to_p4[0], p2[1] + p1_to_p4[1]];
+      const p4 = [p1[0] + p1_to_p4[0], p1[1] + p1_to_p4[1]];
+      
+      // Get style based on settings
+      const style = getStyle(depth, "cube", scrollProgress);
+      
+      // Calculate actual depth based on settings
+      let actualDepth = window.config.pixelDepth;
+      
+      // Vary depth by level if enabled
+      if (window.config.depthByLevel) {
+        actualDepth = window.config.pixelDepth * (1.0 - (depth / window.config.maxDepth) * 0.5);
+      }
+      
+      // Calculate lighting effect if enabled
+      let shadeFactor = 1.0;
+      
+      if (window.config.enableLighting) {
+        // Convert light angles to radians
+        const lightX = p.radians(window.config.lightAngleX);
+        const lightY = p.radians(window.config.lightAngleY);
+        
+        // Calculate light direction vector (simplified)
+        const lightDirX = Math.cos(lightY) * Math.sin(lightX);
+        const lightDirY = Math.sin(lightY);
+        const lightDirZ = Math.cos(lightY) * Math.cos(lightX);
+        
+        // We'll use a simple directional lighting model
+        // The face normal is just (0, 0, 1) for the front face
+        const dotProduct = lightDirZ; // Simplified dot product for front face
+        
+        // Map the dot product to shade
+        const lightIntensityFactor = window.config.lightIntensity / 100;
+        shadeFactor = 0.3 + 0.7 * Math.max(0, dotProduct) * lightIntensityFactor;
+      }
+      
+      // Only draw the front face if not using sidewalls only style
+      if (style.fillType !== 'sidewalls') {
+        // Draw the 3D cube - first the front face
+        p.beginShape();
+        
+        // Set fill color if specified
+        if (style.fill) {
+          const r = style.fill[0] * shadeFactor;
+          const g = style.fill[1] * shadeFactor;
+          const b = style.fill[2] * shadeFactor;
+          p.fill(r, g, b);
+        } else {
+          p.noFill();
+        }
+        
+        // Set stroke if specified
+        if (style.outline) {
+          if (style.outline.length > 3) {
+            p.stroke(style.outline[0], style.outline[1], style.outline[2], style.outline[3]);
+          } else {
+            p.stroke(style.outline[0], style.outline[1], style.outline[2]);
+          }
+          p.strokeWeight(window.config.strokeWeight);
+        } else {
+          p.noStroke();
+        }
+        
+        // Front face
+        p.vertex(p1[0], p1[1], 0);
+        p.vertex(p2[0], p2[1], 0);
+        p.vertex(p3[0], p3[1], 0);
+        p.vertex(p4[0], p4[1], 0);
+        p.endShape(p.CLOSE);
+      }
+      
+      // Only draw the other faces if we have actual depth
+      if (actualDepth > 0) {
+        // Calculate back points
+        const backZ = -actualDepth;
+        
+        // Calculate darker shade for side faces
+        const sideShadeFactor = shadeFactor * 0.8; // Make sides slightly darker
+        
+        // Side faces (only if the cube has depth)
+        // Left face
+        p.beginShape();
+        if (style.fill) {
+          const r = style.fill[0] * sideShadeFactor;
+          const g = style.fill[1] * sideShadeFactor;
+          const b = style.fill[2] * sideShadeFactor;
+          p.fill(r, g, b);
+        }
+        p.vertex(p1[0], p1[1], 0);
+        p.vertex(p4[0], p4[1], 0);
+        p.vertex(p4[0], p4[1], backZ);
+        p.vertex(p1[0], p1[1], backZ);
+        p.endShape(p.CLOSE);
+        
+        // Right face
+        p.beginShape();
+        p.vertex(p2[0], p2[1], 0);
+        p.vertex(p3[0], p3[1], 0);
+        p.vertex(p3[0], p3[1], backZ);
+        p.vertex(p2[0], p2[1], backZ);
+        p.endShape(p.CLOSE);
+        
+        // Top face
+        p.beginShape();
+        const topShadeFactor = shadeFactor * 0.9; // Slightly darker
+        if (style.fill) {
+          const r = style.fill[0] * topShadeFactor;
+          const g = style.fill[1] * topShadeFactor;
+          const b = style.fill[2] * topShadeFactor;
+          p.fill(r, g, b);
+        }
+        p.vertex(p1[0], p1[1], 0);
+        p.vertex(p2[0], p2[1], 0);
+        p.vertex(p2[0], p2[1], backZ);
+        p.vertex(p1[0], p1[1], backZ);
+        p.endShape(p.CLOSE);
+        
+        // Bottom face
+        p.beginShape();
+        p.vertex(p4[0], p4[1], 0);
+        p.vertex(p3[0], p3[1], 0);
+        p.vertex(p3[0], p3[1], backZ);
+        p.vertex(p4[0], p4[1], backZ);
+        p.endShape(p.CLOSE);
+        
+        // Only draw the back face if not using sidewalls only style
+        if (style.fillType !== 'sidewalls') {
+          // Back face
+          p.beginShape();
+          const backShadeFactor = shadeFactor * 0.7; // Make back face darker
+          if (style.fill) {
+            const r = style.fill[0] * backShadeFactor;
+            const g = style.fill[1] * backShadeFactor;
+            const b = style.fill[2] * backShadeFactor;
+            p.fill(r, g, b);
+          }
+          p.vertex(p1[0], p1[1], backZ);
+          p.vertex(p2[0], p2[1], backZ);
+          p.vertex(p3[0], p3[1], backZ);
+          p.vertex(p4[0], p4[1], backZ);
+          p.endShape(p.CLOSE);
+        }
+      }
+      
+      squaresDrawn++;
+      
+      return [p3, p4];
+    } catch (error) {
+      debug.error('Error in drawCube:', error);
+      return [p2, p1]; // Return a fallback coordinate set
+    }
+  }
+
+  // Function to draw a triangle
+  function drawTriangle(p1, p2, depth, angle, mirror, scrollProgress) {
+    try {
+      // Convert angle to radians
+      let angle1 = p.PI * ((90 - angle) / 180);
+      let angle2 = p.PI * (angle / 180);
+      
+      if (mirror) {
+        [angle1, angle2] = [angle2, angle1];
+      }
+      
+      const angle3 = p.PI - angle1 - angle2;
+      
+      // Calculate vectors and lengths
+      const p1_to_p2 = [p2[0] - p1[0], p2[1] - p1[1]];
+      const length_p1_to_p2 = Math.sqrt(p1_to_p2[0] * p1_to_p2[0] + p1_to_p2[1] * p1_to_p2[1]);
+      const length_p1_to_p3 = length_p1_to_p2 * Math.sin(angle2) / Math.sin(angle3);
+      
+      const x = p1_to_p2[0];
+      const y = p1_to_p2[1];
+      
+      // Calculate third point using the equations
+      const equation_1 = p1[0] * x + p1[1] * y + length_p1_to_p3 * length_p1_to_p2 * Math.cos(angle1);
+      const equation_2 = p2[1] * x - p2[0] * y + length_p1_to_p3 * length_p1_to_p2 * Math.sin(angle1);
+      
+      const factor = 1 / (length_p1_to_p2 * length_p1_to_p2);
+      const x3 = factor * (x * equation_1 - y * equation_2);
+      const y3 = factor * (y * equation_1 + x * equation_2);
+      
+      const p3 = [x3, y3];
+      
+      // Return the coordinates for the next branches
+      return [[p3, p1], [p2, p3]];
+    } catch (error) {
+      debug.error('Error in drawTriangle:', error);
+      return [[p1, p2]]; // Return a fallback coordinate set
+    }
+  }
+
+  // Function to get style for a shape
+  function getStyle(depth, shape, scrollProgress) {
+    try {
+      // Determine color based on depth and settings
+      let fillColor, outlineColor;
+      
+      switch(window.config.fillType) {
+        case 'outline':
+          // Just outlines, no fill
+          fillColor = null;
+          outlineColor = window.config.brandColor;
+          break;
+          
+        case 'solid':
+          // Solid fill based on depth
+          fillColor = (depth === 0) ? window.config.baseColor : window.config.brandColor;
+          outlineColor = null;
+          break;
+          
+        case 'sidewalls':
+          // Side walls only - use fill color but no outline
+          fillColor = (depth === 0) ? window.config.baseColor : window.config.brandColor;
+          outlineColor = window.config.brandColor; // Still need outline for the edges
+          break;
+          
+        case 'gradient':
+        default:
+          // Gradient fill based on depth
+          const colorIndex = constrain(map(depth, 0, window.config.maxDepth, 0, window.config.intermediateColors.length - 1), 0, window.config.intermediateColors.length - 1);
+          const lowerIndex = Math.floor(colorIndex);
+          const upperIndex = Math.ceil(colorIndex);
+          const blendFactor = colorIndex - lowerIndex;
+          
+          if (lowerIndex === upperIndex) {
+            fillColor = window.config.intermediateColors[lowerIndex];
+          } else {
+            // Blend between colors
+            fillColor = [
+              lerp(window.config.intermediateColors[lowerIndex][0], window.config.intermediateColors[upperIndex][0], blendFactor),
+              lerp(window.config.intermediateColors[lowerIndex][1], window.config.intermediateColors[upperIndex][1], blendFactor),
+              lerp(window.config.intermediateColors[lowerIndex][2], window.config.intermediateColors[upperIndex][2], blendFactor)
+            ];
+          }
+          
+          // Progressively remove outline as we scroll
+          const outlineOpacity = map(scrollProgress, 0.3, 0.7, 255, 0);
+          outlineColor = (outlineOpacity > 0) ? [...window.config.brandColor, outlineOpacity] : null;
+          break;
+      }
+      
+      return {
+        fill: fillColor,
+        outline: outlineColor,
+        fillType: window.config.fillType
+      };
+    } catch (error) {
+      debug.error('Error in getStyle:', error);
+      return {
+        fill: window.config.baseColor,
+        outline: null,
+        fillType: 'solid'
+      };
+    }
+  }
 } 
