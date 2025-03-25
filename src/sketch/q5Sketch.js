@@ -4,14 +4,21 @@ import { lerp, constrain, map } from '../utils/helpers.js';
 let q5Instance;
 
 // Initialize q5.js sketch
-function initializeQ5Sketch() {
+async function initializeQ5Sketch() {
   console.log('Initializing q5.js sketch...');
   if (window.config) {
     console.log('Creating q5 instance...');
-    // Initialize WebGPU
-    Q5.WebGPU();
-    q5Instance = new Q5(sketch);
-    console.log('Q5 sketch initialized:', q5Instance);
+    try {
+      // Initialize WebGPU and get q5 instance
+      const q = await Q5.WebGPU();
+      q5Instance = new Q5(sketch);
+      console.log('Q5 sketch initialized:', q5Instance);
+    } catch (error) {
+      console.error('Failed to initialize WebGPU:', error);
+      // Fallback to regular WebGL if WebGPU fails
+      q5Instance = new Q5(sketch);
+      console.log('Q5 sketch initialized with WebGL fallback:', q5Instance);
+    }
   } else {
     console.log('Waiting for config...');
     setTimeout(initializeQ5Sketch, 100);
@@ -256,6 +263,7 @@ function sketch(q) {
   q.setup = function() {
     console.log('Q5 setup called');
     q.createCanvas(window.innerWidth, window.innerHeight, q.WEBGL);
+    q.colorMode(q.RGB, 1); // Set to q5's default float-based color mode
     q.rectMode(q.CENTER);
     q.noStroke();
     setupControlPanel();
@@ -270,7 +278,7 @@ function sketch(q) {
     lastFrameTime = currentTime;
 
     // Clear background
-    q.background(255);
+    q.background(1); // Using float-based color mode (1 = white)
 
     // Update scroll position
     const scrollY = window.scrollY;
