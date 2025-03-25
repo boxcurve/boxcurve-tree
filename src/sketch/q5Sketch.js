@@ -32,24 +32,27 @@ async function initializeQ5Sketch() {
   debug.info('Config found, proceeding with initialization...');
   
   try {
-    debug.info('Attempting to initialize WebGPU...');
+    debug.info('Initializing WebGPU via Q5...');
+    
+    // Initialize Q5 with WebGPU
     const q = await Q5.WebGPU();
-    debug.info('WebGPU initialized successfully');
     
-    debug.info('Creating Q5 instance with WebGPU...');
-    q5Instance = new Q5(sketch);
-    debug.info('Q5 instance created successfully', q5Instance);
+    // Run the sketch with the q instance
+    sketch(q);
     
+    debug.info('Q5 WebGPU sketch initialized successfully');
   } catch (error) {
     debug.error('Failed to initialize WebGPU:', error);
-    debug.warn('Falling back to WebGL renderer...');
+    debug.warn('Falling back to standard q5.js renderer...');
     
     try {
-      q5Instance = new Q5(sketch);
-      debug.info('Q5 instance created successfully with WebGL fallback', q5Instance);
+      // Fallback to standard q5.js
+      const q = new Q5();
+      sketch(q);
+      debug.info('Q5 fallback sketch initialized successfully');
     } catch (fallbackError) {
-      debug.error('Failed to initialize Q5 with WebGL fallback:', fallbackError);
-      throw new Error('Failed to initialize Q5 renderer with both WebGPU and WebGL');
+      debug.error('Failed to initialize Q5 fallback:', fallbackError);
+      document.body.innerHTML += '<div style="color:red;background:black;padding:20px;position:fixed;top:0;left:0;right:0;z-index:9999">Failed to initialize Q5 renderer. Your browser may not support WebGPU or WebGL.</div>';
     }
   }
 }
