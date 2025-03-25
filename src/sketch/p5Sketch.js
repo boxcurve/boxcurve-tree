@@ -4,62 +4,42 @@ import './q5Sketch.js';
 // Global p5.js instance
 let p5Instance;
 
-// Debug logging utility
-const debug = {
-  log: (message, data = null) => {
-    console.log(`[P5 Debug] ${message}`, data || '');
-  },
-  error: (message, error = null) => {
-    console.error(`[P5 Error] ${message}`, error || '');
-  },
-  warn: (message, data = null) => {
-    console.warn(`[P5 Warning] ${message}`, data || '');
-  },
-  info: (message, data = null) => {
-    console.info(`[P5 Info] ${message}`, data || '');
-  }
-};
-
 // Initialize control panel visibility
 document.addEventListener('DOMContentLoaded', function() {
-  debug.info('DOM Content Loaded');
+  console.log('DOM Content Loaded');
   const controlPanel = document.getElementById('controlPanel');
   const showPanelButton = document.getElementById('showPanel');
   const hidePanelButton = document.getElementById('hidePanel');
   const rendererModeSelect = document.getElementById('rendererMode');
 
-  debug.info('Control Panel:', controlPanel);
-  debug.info('Show Panel Button:', showPanelButton);
-  debug.info('Hide Panel Button:', hidePanelButton);
-  debug.info('Renderer Mode Select:', rendererModeSelect);
+  console.log('Control Panel:', controlPanel);
+  console.log('Show Panel Button:', showPanelButton);
+  console.log('Hide Panel Button:', hidePanelButton);
+  console.log('Renderer Mode Select:', rendererModeSelect);
 
   if (showPanelButton) {
     showPanelButton.addEventListener('click', function() {
-      debug.info('Show panel clicked');
+      console.log('Show panel clicked');
       if (controlPanel) {
         controlPanel.style.display = 'block';
         showPanelButton.style.display = 'none';
-      } else {
-        debug.warn('Control panel element not found');
       }
     });
   }
 
   if (hidePanelButton) {
     hidePanelButton.addEventListener('click', function() {
-      debug.info('Hide panel clicked');
+      console.log('Hide panel clicked');
       if (controlPanel) {
         controlPanel.style.display = 'none';
         showPanelButton.style.display = 'block';
-      } else {
-        debug.warn('Control panel element not found');
       }
     });
   }
 
   if (rendererModeSelect) {
     rendererModeSelect.addEventListener('change', function() {
-      debug.info('Renderer mode changed:', this.value);
+      console.log('Renderer mode changed:', this.value);
       switchRenderer(this.value);
     });
   }
@@ -67,67 +47,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to switch between renderers
 function switchRenderer(mode) {
-  debug.info('Switching renderer to:', mode);
+  console.log('Switching renderer to:', mode);
   
-  try {
-    // Clean up existing renderer
-    if (p5Instance) {
-      debug.info('Cleaning up p5.js instance');
-      p5Instance.remove();
-      p5Instance = null;
-    }
-    
-    if (q5Instance) {
-      debug.info('Cleaning up q5.js instance');
-      q5Instance.remove();
-      q5Instance = null;
-    }
+  // Clean up existing renderer
+  if (p5Instance) {
+    console.log('Cleaning up p5.js instance');
+    p5Instance.remove();
+    p5Instance = null;
+  }
 
-    // Initialize new renderer
-    if (mode === 'p5') {
-      debug.info('Initializing p5.js renderer');
-      initializeP5Sketch();
-    } else if (mode === 'q5') {
-      debug.info('Initializing q5.js renderer');
-      initializeQ5Sketch();
-    }
-  } catch (error) {
-    debug.error('Failed to switch renderer:', error);
+  // Initialize new renderer
+  if (mode === 'p5') {
+    console.log('Initializing p5.js renderer');
+    initializeSketch();
+  } else if (mode === 'q5') {
+    console.log('Initializing q5.js renderer');
+    initializeQ5Sketch();
   }
 }
 
-// Initialize p5.js sketch
-function initializeP5Sketch() {
-  debug.info('Starting p5.js sketch initialization...');
-  
-  if (!window.config) {
-    debug.warn('Config not found, waiting for config to be available...');
-    setTimeout(initializeP5Sketch, 100);
-    return;
-  }
-
-  debug.info('Config found, proceeding with initialization...');
-  
-  try {
-    debug.info('Creating p5 instance...');
+// Wait for both DOM and config to be ready
+function initializeSketch() {
+  console.log('Initializing sketch...');
+  console.log('window.config:', window.config);
+  if (window.config) {
+    console.log('Creating p5 instance...');
     p5Instance = new p5(sketch);
-    debug.info('P5 instance created successfully:', p5Instance);
-  } catch (error) {
-    debug.error('Failed to initialize p5.js:', error);
-    throw new Error('Failed to initialize p5.js renderer');
+    console.log('P5 sketch initialized:', p5Instance);
+  } else {
+    console.log('Waiting for config...');
+    setTimeout(initializeSketch, 100);
   }
 }
 
 // Initialize when DOM is ready
 window.addEventListener('load', function() {
-  debug.info('Window loaded');
-  // Start with p5.js by default
-  initializeP5Sketch();
+  console.log('Window loaded');
+  initializeSketch();
 });
 
 // Define the sketch
 function sketch(p) {
-  debug.info('P5 sketch function called');
+  console.log('Sketch function called');
   
   // ===== Runtime Variables =====
   let needsUpdate = true;
@@ -146,48 +107,43 @@ function sketch(p) {
 
   // Function to update intermediate colors when base or brand colors change
   function updateIntermediateColors() {
-    debug.info('Updating intermediate colors');
-    debug.info('Base color:', window.config.baseColor);
-    debug.info('Brand color:', window.config.brandColor);
+    console.log('Updating intermediate colors');
+    console.log('Base color:', window.config.baseColor);
+    console.log('Brand color:', window.config.brandColor);
     
-    try {
-      window.config.intermediateColors = [
-        window.config.baseColor,
-        [80, 30, 80],  // Purple
-        [120, 40, 70], // Maroon
-        [180, 60, 60], // Dark Red
-        window.config.brandColor
-      ];
-      needsUpdate = true;
-      debug.info('Intermediate colors updated successfully');
-    } catch (error) {
-      debug.error('Failed to update intermediate colors:', error);
-    }
+    window.config.intermediateColors = [
+      window.config.baseColor,
+      [80, 30, 80],  // Purple
+      [120, 40, 70], // Maroon
+      [180, 60, 60], // Dark Red
+      window.config.brandColor
+    ];
+    needsUpdate = true;
   }
 
   // Function to load saved preset
   function loadSavedPreset() {
-    debug.info('Attempting to load saved preset...');
+    console.log('Attempting to load saved preset...');
     const savedPreset = localStorage.getItem('boxcurveTreePreset');
     
     if (!savedPreset) {
-      debug.info('No saved preset found');
+      console.log('No saved preset found');
       return;
     }
 
     try {
       const preset = JSON.parse(savedPreset);
       Object.assign(window.config, preset);
-      debug.info('Preset loaded successfully:', preset);
+      console.log('Preset loaded successfully:', preset);
       
       if (window.controlPanel) {
         window.controlPanel.updateControlsFromConfig();
-        debug.info('Control panel updated with preset values');
+        console.log('Control panel updated with preset values');
       } else {
-        debug.warn('Control panel not found, skipping update');
+        console.log('Control panel not found, skipping update');
       }
     } catch (error) {
-      debug.error('Error loading saved preset:', error);
+      console.error('Error loading saved preset:', error);
     }
   }
 
@@ -196,21 +152,21 @@ function sketch(p) {
     try {
       const preset = JSON.stringify(window.config);
       localStorage.setItem('boxcurveTreePreset', preset);
-      debug.info('Current settings saved as preset');
+      console.log('Current settings saved as preset');
     } catch (error) {
-      debug.error('Error saving preset:', error);
+      console.error('Error saving preset:', error);
     }
   }
 
   // Function to update all control values from config
   function updateControlsFromConfig() {
-    debug.info('Updating control values from config...');
+    console.log('Updating control values from config...');
     
     try {
       Object.keys(window.config).forEach(key => {
         const element = document.getElementById(key);
         if (!element) {
-          debug.warn(`Control element not found for key: ${key}`);
+          console.warn(`Control element not found for key: ${key}`);
           return;
         }
 
@@ -243,30 +199,30 @@ function sketch(p) {
             valueElement.textContent = displayValue;
           }
         } catch (error) {
-          debug.error(`Error updating control for key ${key}:`, error);
+          console.error(`Error updating control for key ${key}:`, error);
         }
       });
-      debug.info('Control values updated successfully');
+      console.log('Control values updated successfully');
     } catch (error) {
-      debug.error('Failed to update control values:', error);
+      console.error('Failed to update control values:', error);
     }
   }
 
   // Function to setup control panel event listeners
   function setupControlPanel() {
-    debug.info('Setting up control panel event listeners...');
+    console.log('Setting up control panel event listeners...');
     
     try {
       // Add color change listener
       window.addEventListener('colorChanged', function() {
-        debug.info('Color change event received');
+        console.log('Color change event received');
         updateIntermediateColors();
         needsUpdate = true;
       });
 
       // Helper function to update config and trigger redraw
       function updateConfig(key, value) {
-        debug.info(`Updating config: ${key} = ${value}`);
+        console.log(`Updating config: ${key} = ${value}`);
         window.config[key] = value;
         needsUpdate = true;
         saveCurrentPreset();
@@ -274,13 +230,13 @@ function sketch(p) {
 
       // Helper function to handle number inputs
       function setupNumberInput(id, isInteger = true) {
-        debug.info(`Setting up number input: ${id}`);
+        console.log(`Setting up number input: ${id}`);
         const element = document.getElementById(id);
         const numberElement = document.getElementById(`${id}Number`);
         const valueElement = document.getElementById(`${id}Value`);
         
         if (!element || !numberElement) {
-          debug.warn(`Missing elements for number input: ${id}`);
+          console.warn(`Missing elements for number input: ${id}`);
           return;
         }
 
@@ -289,7 +245,7 @@ function sketch(p) {
           element.addEventListener('input', function() {
             const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
             if (isNaN(value)) {
-              debug.warn(`Invalid number input for ${id}:`, this.value);
+              console.warn(`Invalid number input for ${id}:`, this.value);
               return;
             }
             numberElement.value = value;
@@ -308,7 +264,7 @@ function sketch(p) {
           numberElement.addEventListener('input', function() {
             const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
             if (isNaN(value)) {
-              debug.warn(`Invalid number input for ${id}:`, this.value);
+              console.warn(`Invalid number input for ${id}:`, this.value);
               return;
             }
             element.value = value;
@@ -324,16 +280,16 @@ function sketch(p) {
             updateConfig(id, value);
           });
         } catch (error) {
-          debug.error(`Error setting up number input ${id}:`, error);
+          console.error(`Error setting up number input ${id}:`, error);
         }
       }
 
       // Helper function to handle checkboxes
       function setupCheckbox(id) {
-        debug.info(`Setting up checkbox: ${id}`);
+        console.log(`Setting up checkbox: ${id}`);
         const element = document.getElementById(id);
         if (!element) {
-          debug.warn(`Checkbox not found: ${id}`);
+          console.warn(`Checkbox not found: ${id}`);
           return;
         }
 
@@ -342,16 +298,16 @@ function sketch(p) {
             updateConfig(id, this.checked);
           });
         } catch (error) {
-          debug.error(`Error setting up checkbox ${id}:`, error);
+          console.error(`Error setting up checkbox ${id}:`, error);
         }
       }
 
       // Helper function to handle color inputs
       function setupColorInput(id) {
-        debug.info(`Setting up color input: ${id}`);
+        console.log(`Setting up color input: ${id}`);
         const element = document.getElementById(id);
         if (!element) {
-          debug.warn(`Color input not found: ${id}`);
+          console.warn(`Color input not found: ${id}`);
           return;
         }
 
@@ -359,7 +315,7 @@ function sketch(p) {
           element.addEventListener('input', function() {
             const hexColor = this.value;
             if (!/^#[0-9A-F]{6}$/i.test(hexColor)) {
-              debug.warn(`Invalid hex color for ${id}:`, hexColor);
+              console.warn(`Invalid hex color for ${id}:`, hexColor);
               return;
             }
             const r = parseInt(hexColor.slice(1, 3), 16);
@@ -369,12 +325,12 @@ function sketch(p) {
             window.dispatchEvent(new Event('colorChanged'));
           });
         } catch (error) {
-          debug.error(`Error setting up color input ${id}:`, error);
+          console.error(`Error setting up color input ${id}:`, error);
         }
       }
 
       // Setup all control inputs
-      debug.info('Setting up all control inputs...');
+      console.log('Setting up all control inputs...');
       
       // Number inputs
       const numberInputs = [
@@ -405,10 +361,10 @@ function sketch(p) {
       };
 
       Object.entries(selectInputs).forEach(([id, options]) => {
-        debug.info(`Setting up select input: ${id}`);
+        console.log(`Setting up select input: ${id}`);
         const element = document.getElementById(id);
         if (!element) {
-          debug.warn(`Select input not found: ${id}`);
+          console.warn(`Select input not found: ${id}`);
           return;
         }
 
@@ -417,20 +373,20 @@ function sketch(p) {
             updateConfig(id, this.value);
           });
         } catch (error) {
-          debug.error(`Error setting up select input ${id}:`, error);
+          console.error(`Error setting up select input ${id}:`, error);
         }
       });
 
-      debug.info('Control panel setup completed successfully');
+      console.log('Control panel setup completed successfully');
     } catch (error) {
-      debug.error('Failed to setup control panel:', error);
+      console.error('Failed to setup control panel:', error);
     }
   }
 
   // Function to check for updates and redraw if needed
   function checkForUpdates() {
     if (needsUpdate) {
-      debug.info('Update needed, triggering redraw');
+      console.log('Update needed, triggering redraw');
       p.redraw();
       needsUpdate = false;
     }
@@ -448,70 +404,30 @@ function sketch(p) {
       lastFpsUpdate = currentTime;
     }
 
-    const metrics = {
-      fps: `${fps} FPS`,
-      renderTime: `${renderTime.toFixed(2)}ms`,
-      squaresDrawn: squaresDrawn,
-      scrollProgress: `${(scrollProgress * 100).toFixed(1)}%`,
-      zoomFactor: zoomFactor.toFixed(2),
-      currentDepth: currentDepth,
-      position: {
-        x: `${window.config.xPosition.toFixed(1)}%`,
-        y: `${window.config.yPosition.toFixed(1)}%`,
-        z: window.config.zPosition.toFixed(1)
-      },
-      rotation: {
-        x: `${window.config.rotationX.toFixed(1)}°`,
-        y: `${window.config.rotationY.toFixed(1)}°`,
-        z: `${window.config.rotationZ.toFixed(1)}°`
-      }
-    };
-
     const metricsElement = document.getElementById('metrics');
     if (metricsElement) {
+      // Ensure the metrics element has the correct class
+      metricsElement.className = 'metrics';
       metricsElement.innerHTML = `
         <h4>Debug Information</h4>
-        <div class="metrics-grid">
-          <div class="metric-item">
-            <span class="metric-label">FPS:</span>
-            <span class="metric-value">${metrics.fps}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">Render Time:</span>
-            <span class="metric-value">${metrics.renderTime}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">Squares:</span>
-            <span class="metric-value">${metrics.squaresDrawn}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">Scroll:</span>
-            <span class="metric-value">${metrics.scrollProgress}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">Zoom:</span>
-            <span class="metric-value">${metrics.zoomFactor}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">Depth:</span>
-            <span class="metric-value">${metrics.currentDepth}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">Position:</span>
-            <span class="metric-value">X: ${metrics.position.x} Y: ${metrics.position.y} Z: ${metrics.position.z}</span>
-          </div>
-          <div class="metric-item">
-            <span class="metric-label">Rotation:</span>
-            <span class="metric-value">X: ${metrics.rotation.x} Y: ${metrics.rotation.y} Z: ${metrics.rotation.z}</span>
-          </div>
-        </div>
+        Current Depth: ${currentDepth}/${window.config.maxDepth}<br>
+        Squares Drawn: ${squaresDrawn}<br>
+        Render Time: ${renderTime.toFixed(2)}ms<br>
+        Zoom Factor: ${zoomFactor.toFixed(2)}x<br>
+        Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%<br>
+        Growth: ${window.config.growthStart}% to ${window.config.growthEnd}%<br>
+        Branch Angle: ${Math.round(window.config.branchAngle)}° (Auto: ${window.config.autoAngle ? "On" : "Off"})<br>
+        Position: X:${Math.round(window.config.xPosition)}%, Y:${Math.round(window.config.yPosition)}%, Z:${Math.round(window.config.zPosition)} (Auto: ${window.config.autoMove ? "On" : "Off"})<br>
+        Rotation: X:${Math.round(window.config.rotationX)}°, Y:${Math.round(window.config.rotationY)}°, Z:${Math.round(window.config.rotationZ)}° (Auto: ${window.config.autoRotate ? "On" : "Off"})<br>
+        Pixel Depth: ${Math.round(window.config.pixelDepth)} (Auto: ${window.config.autoDepth ? "On" : "Off"})<br>
+        Light Angle: X:${Math.round(window.config.lightAngleX)}°, Y:${Math.round(window.config.lightAngleY)}° (Intensity: ${window.config.lightIntensity}%)
       `;
     }
   }
 
   // Setup function
   p.setup = function() {
-    debug.info('P5 setup called');
+    console.log('P5 setup called');
     try {
       p.createCanvas(window.innerWidth, window.innerHeight, p.WEBGL);
       p.colorMode(p.RGB, 255); // Set to p5's default color mode
@@ -519,9 +435,9 @@ function sketch(p) {
       p.noStroke();
       setupControlPanel();
       loadSavedPreset();
-      debug.info('P5 setup completed successfully');
+      console.log('P5 setup completed successfully');
     } catch (error) {
-      debug.error('Failed to complete P5 setup:', error);
+      console.error('Failed to complete P5 setup:', error);
     }
   };
 
@@ -594,24 +510,24 @@ function sketch(p) {
       // Check for updates
       checkForUpdates();
     } catch (error) {
-      debug.error('Error in draw loop:', error);
+      console.error('Error in draw loop:', error);
     }
   };
 
   // Window resize handler
   p.windowResized = function() {
-    debug.info('Window resize detected');
+    console.log('Window resize detected');
     try {
       p.resizeCanvas(window.innerWidth, window.innerHeight);
-      debug.info('Canvas resized successfully');
+      console.log('Canvas resized successfully');
     } catch (error) {
-      debug.error('Failed to resize canvas:', error);
+      console.error('Failed to resize canvas:', error);
     }
   };
 
   // Function to draw the boxcurve tree
   function drawBoxcurveTree(x, y, size, depth, scrollProgress) {
-    debug.info(`Drawing boxcurve tree at (${x}, ${y}) with size ${size} and depth ${depth}`);
+    console.log(`Drawing boxcurve tree at (${x}, ${y}) with size ${size} and depth ${depth}`);
     try {
       p.push();
       p.translate(x, y);
@@ -624,7 +540,7 @@ function sketch(p) {
       
       p.pop();
     } catch (error) {
-      debug.error('Error in drawBoxcurveTree:', error);
+      console.error('Error in drawBoxcurveTree:', error);
     }
   }
 
@@ -651,7 +567,7 @@ function sketch(p) {
         generateTree(nextCoordSet, depth + 1, maxDepth, scrollProgress);
       }
     } catch (error) {
-      debug.error('Error in generateTree:', error);
+      console.error('Error in generateTree:', error);
     }
   }
 
@@ -810,7 +726,7 @@ function sketch(p) {
       
       return [p3, p4];
     } catch (error) {
-      debug.error('Error in drawCube:', error);
+      console.error('Error in drawCube:', error);
       return [p2, p1]; // Return a fallback coordinate set
     }
   }
@@ -849,7 +765,7 @@ function sketch(p) {
       // Return the coordinates for the next branches
       return [[p3, p1], [p2, p3]];
     } catch (error) {
-      debug.error('Error in drawTriangle:', error);
+      console.error('Error in drawTriangle:', error);
       return [[p1, p2]]; // Return a fallback coordinate set
     }
   }
@@ -910,7 +826,7 @@ function sketch(p) {
         fillType: window.config.fillType
       };
     } catch (error) {
-      debug.error('Error in getStyle:', error);
+      console.error('Error in getStyle:', error);
       return {
         fill: window.config.baseColor,
         outline: null,
