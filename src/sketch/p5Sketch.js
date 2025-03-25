@@ -4,42 +4,62 @@ import './q5Sketch.js';
 // Global p5.js instance
 let p5Instance;
 
+// Debug logging utility
+const debug = {
+  log: (message, data = null) => {
+    console.log(`[P5 Debug] ${message}`, data || '');
+  },
+  error: (message, error = null) => {
+    console.error(`[P5 Error] ${message}`, error || '');
+  },
+  warn: (message, data = null) => {
+    console.warn(`[P5 Warning] ${message}`, data || '');
+  },
+  info: (message, data = null) => {
+    console.info(`[P5 Info] ${message}`, data || '');
+  }
+};
+
 // Initialize control panel visibility
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM Content Loaded');
+  debug.info('DOM Content Loaded');
   const controlPanel = document.getElementById('controlPanel');
   const showPanelButton = document.getElementById('showPanel');
   const hidePanelButton = document.getElementById('hidePanel');
   const rendererModeSelect = document.getElementById('rendererMode');
 
-  console.log('Control Panel:', controlPanel);
-  console.log('Show Panel Button:', showPanelButton);
-  console.log('Hide Panel Button:', hidePanelButton);
-  console.log('Renderer Mode Select:', rendererModeSelect);
+  debug.info('Control Panel:', controlPanel);
+  debug.info('Show Panel Button:', showPanelButton);
+  debug.info('Hide Panel Button:', hidePanelButton);
+  debug.info('Renderer Mode Select:', rendererModeSelect);
 
   if (showPanelButton) {
     showPanelButton.addEventListener('click', function() {
-      console.log('Show panel clicked');
+      debug.info('Show panel clicked');
       if (controlPanel) {
         controlPanel.style.display = 'block';
         showPanelButton.style.display = 'none';
+      } else {
+        debug.warn('Control panel element not found');
       }
     });
   }
 
   if (hidePanelButton) {
     hidePanelButton.addEventListener('click', function() {
-      console.log('Hide panel clicked');
+      debug.info('Hide panel clicked');
       if (controlPanel) {
         controlPanel.style.display = 'none';
         showPanelButton.style.display = 'block';
+      } else {
+        debug.warn('Control panel element not found');
       }
     });
   }
 
   if (rendererModeSelect) {
     rendererModeSelect.addEventListener('change', function() {
-      console.log('Renderer mode changed:', this.value);
+      debug.info('Renderer mode changed:', this.value);
       switchRenderer(this.value);
     });
   }
@@ -47,51 +67,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to switch between renderers
 function switchRenderer(mode) {
-  console.log('Switching renderer to:', mode);
+  debug.info('Switching renderer to:', mode);
   
-  // Clean up existing renderer
-  if (p5Instance) {
-    p5Instance.remove();
-    p5Instance = null;
-  }
-  
-  if (q5Instance) {
-    q5Instance.remove();
-    q5Instance = null;
-  }
+  try {
+    // Clean up existing renderer
+    if (p5Instance) {
+      debug.info('Cleaning up p5.js instance');
+      p5Instance.remove();
+      p5Instance = null;
+    }
+    
+    if (q5Instance) {
+      debug.info('Cleaning up q5.js instance');
+      q5Instance.remove();
+      q5Instance = null;
+    }
 
-  // Initialize new renderer
-  if (mode === 'p5') {
-    initializeP5Sketch();
-  } else if (mode === 'q5') {
-    initializeQ5Sketch();
+    // Initialize new renderer
+    if (mode === 'p5') {
+      debug.info('Initializing p5.js renderer');
+      initializeP5Sketch();
+    } else if (mode === 'q5') {
+      debug.info('Initializing q5.js renderer');
+      initializeQ5Sketch();
+    }
+  } catch (error) {
+    debug.error('Failed to switch renderer:', error);
   }
 }
 
 // Initialize p5.js sketch
 function initializeP5Sketch() {
-  console.log('Initializing p5.js sketch...');
-  console.log('window.config:', window.config);
-  if (window.config) {
-    console.log('Creating p5 instance...');
-    p5Instance = new p5(sketch);
-    console.log('P5 sketch initialized:', p5Instance);
-  } else {
-    console.log('Waiting for config...');
+  debug.info('Starting p5.js sketch initialization...');
+  
+  if (!window.config) {
+    debug.warn('Config not found, waiting for config to be available...');
     setTimeout(initializeP5Sketch, 100);
+    return;
+  }
+
+  debug.info('Config found, proceeding with initialization...');
+  
+  try {
+    debug.info('Creating p5 instance...');
+    p5Instance = new p5(sketch);
+    debug.info('P5 instance created successfully:', p5Instance);
+  } catch (error) {
+    debug.error('Failed to initialize p5.js:', error);
+    throw new Error('Failed to initialize p5.js renderer');
   }
 }
 
 // Initialize when DOM is ready
 window.addEventListener('load', function() {
-  console.log('Window loaded');
+  debug.info('Window loaded');
   // Start with p5.js by default
   initializeP5Sketch();
 });
 
 // Define the sketch
 function sketch(p) {
-  console.log('Sketch function called');
+  debug.info('P5 sketch function called');
+  
   // ===== Runtime Variables =====
   let needsUpdate = true;
   let lastScrollY = 0;
@@ -103,725 +140,424 @@ function sketch(p) {
   let renderTime = 0;
   let squaresDrawn = 0;
   let lastFrameTime = 0;
-  
+  let frameCount = 0;
+  let fps = 0;
+  let lastFpsUpdate = 0;
+
   // Function to update intermediate colors when base or brand colors change
   function updateIntermediateColors() {
-    console.log('Updating intermediate colors');
-    console.log('Base color:', window.config.baseColor);
-    console.log('Brand color:', window.config.brandColor);
+    debug.info('Updating intermediate colors');
+    debug.info('Base color:', window.config.baseColor);
+    debug.info('Brand color:', window.config.brandColor);
     
-    window.config.intermediateColors = [
-      window.config.baseColor,
-      [80, 30, 80],  // Purple
-      [120, 40, 70], // Maroon
-      [180, 60, 60], // Dark Red
-      window.config.brandColor
-    ];
-    needsUpdate = true;
+    try {
+      window.config.intermediateColors = [
+        window.config.baseColor,
+        [80, 30, 80],  // Purple
+        [120, 40, 70], // Maroon
+        [180, 60, 60], // Dark Red
+        window.config.brandColor
+      ];
+      needsUpdate = true;
+      debug.info('Intermediate colors updated successfully');
+    } catch (error) {
+      debug.error('Failed to update intermediate colors:', error);
+    }
   }
-  
+
   // Function to load saved preset
   function loadSavedPreset() {
+    debug.info('Attempting to load saved preset...');
     const savedPreset = localStorage.getItem('boxcurveTreePreset');
-    if (savedPreset) {
-      try {
-        const preset = JSON.parse(savedPreset);
-        Object.assign(window.config, preset);
-        if (window.controlPanel) {
-          window.controlPanel.updateControlsFromConfig();
-        }
-      } catch (e) {
-        console.error('Error loading saved preset:', e);
+    
+    if (!savedPreset) {
+      debug.info('No saved preset found');
+      return;
+    }
+
+    try {
+      const preset = JSON.parse(savedPreset);
+      Object.assign(window.config, preset);
+      debug.info('Preset loaded successfully:', preset);
+      
+      if (window.controlPanel) {
+        window.controlPanel.updateControlsFromConfig();
+        debug.info('Control panel updated with preset values');
+      } else {
+        debug.warn('Control panel not found, skipping update');
       }
+    } catch (error) {
+      debug.error('Error loading saved preset:', error);
     }
   }
 
   // Function to save current settings as preset
   function saveCurrentPreset() {
     try {
-      localStorage.setItem('boxcurveTreePreset', JSON.stringify(window.config));
-    } catch (e) {
-      console.error('Error saving preset:', e);
+      const preset = JSON.stringify(window.config);
+      localStorage.setItem('boxcurveTreePreset', preset);
+      debug.info('Current settings saved as preset');
+    } catch (error) {
+      debug.error('Error saving preset:', error);
     }
   }
 
   // Function to update all control values from config
   function updateControlsFromConfig() {
-    // Update all input elements to match config values
-    Object.keys(window.config).forEach(key => {
-      const element = document.getElementById(key);
-      if (element) {
-        if (element.type === 'checkbox') {
-          element.checked = window.config[key];
-        } else if (element.type === 'color') {
-          const color = window.config[key];
-          const hexColor = `#${(color[0] << 16 | color[1] << 8 | color[2]).toString(16).padStart(6, '0')}`;
-          element.value = hexColor;
-        } else {
-          element.value = window.config[key];
+    debug.info('Updating control values from config...');
+    
+    try {
+      Object.keys(window.config).forEach(key => {
+        const element = document.getElementById(key);
+        if (!element) {
+          debug.warn(`Control element not found for key: ${key}`);
+          return;
         }
-        
-        // Update associated number input and value display if they exist
-        const numberElement = document.getElementById(`${key}Number`);
-        if (numberElement) {
-          numberElement.value = window.config[key];
-        }
-        
-        const valueElement = document.getElementById(`${key}Value`);
-        if (valueElement) {
-          let displayValue = window.config[key];
-          // Add units where appropriate
-          if (key.toLowerCase().includes('angle')) {
-            displayValue += '°';
-          } else if (key.toLowerCase().includes('position') && !key.includes('z')) {
-            displayValue += '%';
+
+        try {
+          if (element.type === 'checkbox') {
+            element.checked = window.config[key];
+          } else if (element.type === 'color') {
+            const color = window.config[key];
+            const hexColor = `#${(color[0] << 16 | color[1] << 8 | color[2]).toString(16).padStart(6, '0')}`;
+            element.value = hexColor;
+          } else {
+            element.value = window.config[key];
           }
-          valueElement.textContent = displayValue;
+          
+          // Update associated number input and value display if they exist
+          const numberElement = document.getElementById(`${key}Number`);
+          if (numberElement) {
+            numberElement.value = window.config[key];
+          }
+          
+          const valueElement = document.getElementById(`${key}Value`);
+          if (valueElement) {
+            let displayValue = window.config[key];
+            // Add units where appropriate
+            if (key.toLowerCase().includes('angle')) {
+              displayValue += '°';
+            } else if (key.toLowerCase().includes('position') && !key.includes('z')) {
+              displayValue += '%';
+            }
+            valueElement.textContent = displayValue;
+          }
+        } catch (error) {
+          debug.error(`Error updating control for key ${key}:`, error);
         }
-      }
-    });
+      });
+      debug.info('Control values updated successfully');
+    } catch (error) {
+      debug.error('Failed to update control values:', error);
+    }
   }
 
   // Function to setup control panel event listeners
   function setupControlPanel() {
-    // Add color change listener
-    window.addEventListener('colorChanged', function() {
-      console.log('Color change event received');
-      updateIntermediateColors();
-      needsUpdate = true;
-    });
-
-    // Helper function to update config and trigger redraw
-    function updateConfig(key, value) {
-      window.config[key] = value;
-      needsUpdate = true;
-      saveCurrentPreset();
-    }
-
-    // Helper function to handle number inputs
-    function setupNumberInput(id, isInteger = true) {
-      const element = document.getElementById(id);
-      const numberElement = document.getElementById(`${id}Number`);
-      const valueElement = document.getElementById(`${id}Value`);
-      
-      if (element && numberElement) {
-        // Sync the number input with the range input
-        element.addEventListener('input', function() {
-          const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
-          numberElement.value = value;
-          if (valueElement) {
-            let displayValue = value;
-            if (id.toLowerCase().includes('angle')) {
-              displayValue += '°';
-            } else if (id.toLowerCase().includes('position') && !id.includes('z')) {
-              displayValue += '%';
-            }
-            valueElement.textContent = displayValue;
-          }
-          updateConfig(id, value);
-        });
-
-        numberElement.addEventListener('input', function() {
-          const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
-          element.value = value;
-          if (valueElement) {
-            let displayValue = value;
-            if (id.toLowerCase().includes('angle')) {
-              displayValue += '°';
-            } else if (id.toLowerCase().includes('position') && !id.includes('z')) {
-              displayValue += '%';
-            }
-            valueElement.textContent = displayValue;
-          }
-          updateConfig(id, value);
-        });
-      }
-    }
-
-    // Helper function to handle checkbox inputs
-    function setupCheckbox(id) {
-      const element = document.getElementById(id);
-      if (element) {
-        element.addEventListener('change', function() {
-          updateConfig(id, this.checked);
-        });
-      }
-    }
-
-    // Helper function to handle color inputs
-    function setupColorInput(id) {
-      const element = document.getElementById(id);
-      if (element) {
-        element.addEventListener('input', function() {
-          const hex = this.value.substring(1);
-          const rgb = [
-            parseInt(hex.substring(0, 2), 16),
-            parseInt(hex.substring(2, 4), 16),
-            parseInt(hex.substring(4, 6), 16)
-          ];
-          updateConfig(id.replace('Color', ''), rgb);
-          document.getElementById(`${id}Hex`).textContent = this.value.toUpperCase();
-        });
-      }
-    }
-
-    // Setup all number inputs
-    setupNumberInput('maxDepth', true);
-    setupNumberInput('startDepth', true);
-    setupNumberInput('branchAngle', true);
-    setupNumberInput('angleSpeed', false);
-    setupNumberInput('scaleFactor', false);
-    setupNumberInput('xPosition', true);
-    setupNumberInput('yPosition', true);
-    setupNumberInput('zPosition', true);
-    setupNumberInput('moveSpeed', false);
-    setupNumberInput('startingSize', true);
-    setupNumberInput('rotationX', true);
-    setupNumberInput('rotationY', true);
-    setupNumberInput('rotationZ', true);
-    setupNumberInput('rotationSpeed', false);
-    setupNumberInput('maxZoom', false);
-    setupNumberInput('zoomSpeed', false);
-    setupNumberInput('growthStart', true);
-    setupNumberInput('growthEnd', true);
-    setupNumberInput('strokeWeight', true);
-    setupNumberInput('pixelDepth', true);
-    setupNumberInput('lightAngleX', true);
-    setupNumberInput('lightAngleY', true);
-    setupNumberInput('lightIntensity', true);
-
-    // Setup all checkboxes
-    setupCheckbox('autoAngle');
-    setupCheckbox('autoMove');
-    setupCheckbox('autoRotate');
-    setupCheckbox('autoDepth');
-    setupCheckbox('depthByLevel');
-    setupCheckbox('enableLighting');
-
-    // Setup color inputs
-    setupColorInput('baseColor');
-    setupColorInput('brandColor');
-
-    // Setup fill type selector
-    const fillTypeSelect = document.getElementById('fillType');
-    if (fillTypeSelect) {
-      fillTypeSelect.addEventListener('change', function() {
-        updateConfig('fillType', this.value);
+    debug.info('Setting up control panel event listeners...');
+    
+    try {
+      // Add color change listener
+      window.addEventListener('colorChanged', function() {
+        debug.info('Color change event received');
+        updateIntermediateColors();
+        needsUpdate = true;
       });
-    }
 
-    // Setup preset buttons
-    ['preset1', 'preset2', 'preset3'].forEach(presetId => {
-      const button = document.getElementById(presetId);
-      if (button) {
-        button.addEventListener('click', function() {
-          Object.assign(window.config, window.presets[presetId]);
-          updateControlsFromConfig();
-          needsUpdate = true;
-        });
+      // Helper function to update config and trigger redraw
+      function updateConfig(key, value) {
+        debug.info(`Updating config: ${key} = ${value}`);
+        window.config[key] = value;
+        needsUpdate = true;
+        saveCurrentPreset();
       }
-    });
 
-    // Initial update of all controls
-    updateControlsFromConfig();
-  }
-  
-  p.setup = function() {
-    const canvas = p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
-    canvas.id('treeCanvas');
-    
-    // Initialize mouse position
-    lastMouseX = p.mouseX;
-    lastMouseY = p.mouseY;
-    lastFrameTime = p.millis();
-    
-    // Load saved preset if available
-    loadSavedPreset();
-    
-    // Update intermediate colors to match current config
-    updateIntermediateColors();
-    
-    // Set up control panel event listeners
-    setupControlPanel();
-    
-    // Force first update
-    needsUpdate = true;
-    
-    // Show the control panel by default
-    const controlPanel = document.getElementById('controlPanel');
-    const showPanelButton = document.getElementById('showPanel');
-    if (controlPanel && showPanelButton) {
-      controlPanel.style.display = 'block';
-      showPanelButton.style.display = 'none';
+      // Helper function to handle number inputs
+      function setupNumberInput(id, isInteger = true) {
+        debug.info(`Setting up number input: ${id}`);
+        const element = document.getElementById(id);
+        const numberElement = document.getElementById(`${id}Number`);
+        const valueElement = document.getElementById(`${id}Value`);
+        
+        if (!element || !numberElement) {
+          debug.warn(`Missing elements for number input: ${id}`);
+          return;
+        }
+
+        try {
+          // Sync the number input with the range input
+          element.addEventListener('input', function() {
+            const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
+            if (isNaN(value)) {
+              debug.warn(`Invalid number input for ${id}:`, this.value);
+              return;
+            }
+            numberElement.value = value;
+            if (valueElement) {
+              let displayValue = value;
+              if (id.toLowerCase().includes('angle')) {
+                displayValue += '°';
+              } else if (id.toLowerCase().includes('position') && !id.includes('z')) {
+                displayValue += '%';
+              }
+              valueElement.textContent = displayValue;
+            }
+            updateConfig(id, value);
+          });
+
+          numberElement.addEventListener('input', function() {
+            const value = isInteger ? parseInt(this.value) : parseFloat(this.value);
+            if (isNaN(value)) {
+              debug.warn(`Invalid number input for ${id}:`, this.value);
+              return;
+            }
+            element.value = value;
+            if (valueElement) {
+              let displayValue = value;
+              if (id.toLowerCase().includes('angle')) {
+                displayValue += '°';
+              } else if (id.toLowerCase().includes('position') && !id.includes('z')) {
+                displayValue += '%';
+              }
+              valueElement.textContent = displayValue;
+            }
+            updateConfig(id, value);
+          });
+        } catch (error) {
+          debug.error(`Error setting up number input ${id}:`, error);
+        }
+      }
+
+      // Helper function to handle checkboxes
+      function setupCheckbox(id) {
+        debug.info(`Setting up checkbox: ${id}`);
+        const element = document.getElementById(id);
+        if (!element) {
+          debug.warn(`Checkbox not found: ${id}`);
+          return;
+        }
+
+        try {
+          element.addEventListener('change', function() {
+            updateConfig(id, this.checked);
+          });
+        } catch (error) {
+          debug.error(`Error setting up checkbox ${id}:`, error);
+        }
+      }
+
+      // Helper function to handle color inputs
+      function setupColorInput(id) {
+        debug.info(`Setting up color input: ${id}`);
+        const element = document.getElementById(id);
+        if (!element) {
+          debug.warn(`Color input not found: ${id}`);
+          return;
+        }
+
+        try {
+          element.addEventListener('input', function() {
+            const hexColor = this.value;
+            if (!/^#[0-9A-F]{6}$/i.test(hexColor)) {
+              debug.warn(`Invalid hex color for ${id}:`, hexColor);
+              return;
+            }
+            const r = parseInt(hexColor.slice(1, 3), 16);
+            const g = parseInt(hexColor.slice(3, 5), 16);
+            const b = parseInt(hexColor.slice(5, 7), 16);
+            updateConfig(id, [r, g, b]);
+            window.dispatchEvent(new Event('colorChanged'));
+          });
+        } catch (error) {
+          debug.error(`Error setting up color input ${id}:`, error);
+        }
+      }
+
+      // Setup all control inputs
+      debug.info('Setting up all control inputs...');
+      
+      // Number inputs
+      const numberInputs = [
+        'maxDepth', 'startDepth', 'branchAngle', 'angleSpeed', 'scaleFactor',
+        'xPosition', 'yPosition', 'zPosition', 'moveSpeed', 'startingSize',
+        'rotationX', 'rotationY', 'rotationZ', 'rotationSpeed', 'maxZoom',
+        'zoomSpeed', 'growthStart', 'growthEnd', 'pixelDepth', 'lightAngleX',
+        'lightAngleY', 'lightIntensity', 'strokeWeight'
+      ];
+      
+      numberInputs.forEach(id => setupNumberInput(id, !id.includes('Speed') && !id.includes('Factor')));
+
+      // Checkboxes
+      const checkboxes = [
+        'autoAngle', 'autoMove', 'autoRotate', 'autoDepth',
+        'depthByLevel', 'enableLighting'
+      ];
+      checkboxes.forEach(id => setupCheckbox(id));
+
+      // Color inputs
+      const colorInputs = ['baseColor', 'brandColor'];
+      colorInputs.forEach(id => setupColorInput(id));
+
+      // Select inputs
+      const selectInputs = {
+        'fillType': ['gradient', 'solid', 'outline', 'sidewalls'],
+        'exportQuality': ['standard', 'high']
+      };
+
+      Object.entries(selectInputs).forEach(([id, options]) => {
+        debug.info(`Setting up select input: ${id}`);
+        const element = document.getElementById(id);
+        if (!element) {
+          debug.warn(`Select input not found: ${id}`);
+          return;
+        }
+
+        try {
+          element.addEventListener('change', function() {
+            updateConfig(id, this.value);
+          });
+        } catch (error) {
+          debug.error(`Error setting up select input ${id}:`, error);
+        }
+      });
+
+      debug.info('Control panel setup completed successfully');
+    } catch (error) {
+      debug.error('Failed to setup control panel:', error);
     }
-    
-    // Explicitly console log that initialization is complete
-    console.log("Boxcurve Tree setup complete");
-  };
-  
-  // Update function to check if control panel needs update
+  }
+
+  // Function to check for updates and redraw if needed
   function checkForUpdates() {
-    if (window.controlPanel && window.controlPanel.isUpdateNeeded()) {
-      needsUpdate = true;
-      window.controlPanel.resetUpdateFlag();
+    if (needsUpdate) {
+      debug.info('Update needed, triggering redraw');
+      p.redraw();
+      needsUpdate = false;
     }
   }
 
-  p.draw = function() {
-    checkForUpdates();
-    const currentTime = p.millis();
-    const deltaTime = (currentTime - lastFrameTime) / 1000;
-    lastFrameTime = currentTime;
-    
-    if (window.config.autoRotate || window.config.autoMove || window.config.autoAngle || window.config.autoDepth) {
-      if (window.config.autoRotate) {
-        window.config.rotationY += window.config.rotationSpeed * deltaTime * 15;
-        window.config.rotationZ += window.config.rotationSpeed * deltaTime * 5;
-        
-        if (window.config.rotationY > 180) window.config.rotationY -= 360;
-        if (window.config.rotationZ > 180) window.config.rotationZ -= 360;
-        
-        document.getElementById('rotationY').value = window.config.rotationY;
-        document.getElementById('rotationYValue').textContent = Math.round(window.config.rotationY) + '°';
-        
-        document.getElementById('rotationZ').value = window.config.rotationZ;
-        document.getElementById('rotationZValue').textContent = Math.round(window.config.rotationZ) + '°';
-      }
-      
-      if (window.config.autoMove) {
-        window.config.movePhase += window.config.moveSpeed * deltaTime;
-        if (window.config.movePhase > Math.PI * 2) window.config.movePhase -= Math.PI * 2;
-        
-        const xRange = 30;
-        const yRange = 8;
-        const zRange = 100;
-        
-        const newX = 50 + xRange * Math.sin(window.config.movePhase);
-        const newY = 50 + yRange * Math.cos(window.config.movePhase * 0.3);
-        const newZ = zRange * Math.sin(window.config.movePhase * 0.5);
-        
-        const xzLerpFactor = Math.min(0.05 * (60 * deltaTime), 0.2);
-        const yLerpFactor = Math.min(0.02 * (60 * deltaTime), 0.08);
-        
-        window.config.xPosition = lerp(window.config.xPosition, newX, xzLerpFactor);
-        window.config.yPosition = lerp(window.config.yPosition, newY, yLerpFactor);
-        window.config.zPosition = lerp(window.config.zPosition, newZ, xzLerpFactor);
-        
-        if (p.frameCount % 5 === 0) {
-          document.getElementById('xPosition').value = Math.round(window.config.xPosition);
-          document.getElementById('xPositionValue').textContent = Math.round(window.config.xPosition) + '%';
-          
-          document.getElementById('yPosition').value = Math.round(window.config.yPosition);
-          document.getElementById('yPositionValue').textContent = Math.round(window.config.yPosition) + '%';
-          
-          document.getElementById('zPosition').value = Math.round(window.config.zPosition);
-          document.getElementById('zPositionValue').textContent = Math.round(window.config.zPosition);
-        }
-      }
-      
-      if (window.config.autoAngle) {
-        window.config.anglePhase += window.config.angleSpeed * deltaTime;
-        if (window.config.anglePhase > Math.PI * 2) window.config.anglePhase -= Math.PI * 2;
-        
-        const minAngle = 15;
-        const maxAngle = 75;
-        const range = maxAngle - minAngle;
-        
-        const newAngle = minAngle + range * (0.5 + 0.5 * Math.sin(window.config.anglePhase));
-        window.config.branchAngle = newAngle;
-        
-        document.getElementById('branchAngle').value = Math.round(newAngle);
-        document.getElementById('branchAngleValue').textContent = Math.round(newAngle) + '°';
-      }
-      
-      if (window.config.autoDepth) {
-        window.config.depthPhase += 0.2 * deltaTime;
-        if (window.config.depthPhase > Math.PI * 2) window.config.depthPhase -= Math.PI * 2;
-        
-        const minDepth = 5;
-        const maxDepth = 25;
-        const rangeDepth = maxDepth - minDepth;
-        
-        const newDepth = minDepth + rangeDepth * (0.5 + 0.5 * Math.sin(window.config.depthPhase));
-        window.config.pixelDepth = newDepth;
-        
-        document.getElementById('pixelDepth').value = Math.round(newDepth);
-        document.getElementById('pixelDepthValue').textContent = Math.round(newDepth);
-      }
-      
-      needsUpdate = true;
-    }
-    
-    if (!needsUpdate) return;
-    
-    const startTime = performance.now();
-    squaresDrawn = 0;
-    
-    p.clear();
-    
-    const scrollProgress = constrain(window.scrollY / (document.body.scrollHeight - p.windowHeight), 0, 1);
-    
-    const growthRange = window.config.growthEnd - window.config.growthStart;
-    const normalizedScrollProgress = constrain(
-      map(scrollProgress * 100, window.config.growthStart, window.config.growthEnd, 0, 1), 
-      0, 
-      1
-    );
-    
-    currentDepth = Math.floor(map(normalizedScrollProgress, 0, 1, window.config.startDepth, window.config.maxDepth));
-    targetZoom = map(scrollProgress, 0, 1, 1.0, window.config.maxZoom);
-    
-    zoomFactor += (targetZoom - zoomFactor) * window.config.zoomSpeed;
-    
-    if (scrollProgress < 0.01) {
-      zoomFactor = lerp(zoomFactor, 1.0, 0.1);
-      if (Math.abs(zoomFactor - 1.0) < 0.01) {
-        zoomFactor = 1.0;
-      }
-    }
-    
-    p.push();
-    
-    // Calculate the position in screen coordinates
-    const xPos = map(window.config.xPosition, 0, 100, -p.width/2, p.width/2);
-    const yPos = map(window.config.yPosition, 0, 100, -p.height/2, p.height/2);
-    
-    // Apply position
-    p.translate(xPos, yPos, window.config.zPosition);
-    
-    // Apply rotations
-    p.rotateX(p.radians(window.config.rotationX));
-    p.rotateY(p.radians(window.config.rotationY));
-    p.rotateZ(p.radians(window.config.rotationZ));
-    
-    // Scale based on zoom factor
-    p.scale(zoomFactor);
-    
-    // Draw the tree
-    drawBoxcurveTree(0, 0, window.config.startingSize, currentDepth, scrollProgress);
-    
-    p.pop();
-    
-    // Update render time
-    renderTime = performance.now() - startTime;
-    
-    // Update metrics in the control panel
-    updateMetrics(scrollProgress);
-    
-    // Mark update as complete
-    needsUpdate = false;
-    
-    // Log success
-    if (squaresDrawn > 0) {
-      console.log(`Frame rendered with ${squaresDrawn} squares`);
-    }
-  };
-  
-  function drawBoxcurveTree(x, y, size, depth, scrollProgress) {
-    p.push();
-    p.translate(x, y);
-    
-    if (depth > 0) {
-      const p1 = [-size / 2, -size / 2];
-      const p2 = [size / 2, -size / 2];
-      generateTree([p1, p2], 0, depth, scrollProgress);
-    }
-    
-    p.pop();
-  }
-  
-  function generateTree(coordSet, depth, maxDepth, scrollProgress) {
-    if (depth >= maxDepth) return;
-    
-    const p1 = coordSet[0];
-    const p2 = coordSet[1];
-    
-    // Draw the cube (square)
-    const cubeCoordSet = drawCube(p1, p2, depth, scrollProgress);
-    
-    // Calculate next squares
-    const size = p.dist(p1[0], p1[1], p2[0], p2[1]);
-    const nextSize = size * window.config.scaleFactor;
-    
-    // Draw the triangle for branch connection
-    const triangleCoordSets = drawTriangle(cubeCoordSet[0], cubeCoordSet[1], depth, window.config.branchAngle, mirror, scrollProgress);
-    
-    // Continue with recursion for next branches
-    for (let nextCoordSet of triangleCoordSets) {
-      generateTree(nextCoordSet, depth + 1, maxDepth, scrollProgress);
-    }
-  }
-  
-  function drawCube(p1, p2, depth, scrollProgress) {
-    // Calculate the other two points of the square
-    const p1_to_p2 = [p1[0] - p2[0], p1[1] - p2[1]];
-    const p1_to_p4 = [-p1_to_p2[1], p1_to_p2[0]];
-    
-    const p3 = [p2[0] + p1_to_p4[0], p2[1] + p1_to_p4[1]];
-    const p4 = [p1[0] + p1_to_p4[0], p1[1] + p1_to_p4[1]];
-    
-    // Get style based on settings
-    const style = getStyle(depth, "cube", scrollProgress);
-    
-    // Calculate actual depth based on settings
-    let actualDepth = window.config.pixelDepth;
-    
-    // Vary depth by level if enabled
-    if (window.config.depthByLevel) {
-      actualDepth = window.config.pixelDepth * (1.0 - (depth / window.config.maxDepth) * 0.5);
-    }
-    
-    // Calculate lighting effect if enabled
-    let shadeFactor = 1.0;
-    
-    if (window.config.enableLighting) {
-      // Convert light angles to radians
-      const lightX = p.radians(window.config.lightAngleX);
-      const lightY = p.radians(window.config.lightAngleY);
-      
-      // Calculate light direction vector (simplified)
-      const lightDirX = Math.cos(lightY) * Math.sin(lightX);
-      const lightDirY = Math.sin(lightY);
-      const lightDirZ = Math.cos(lightY) * Math.cos(lightX);
-      
-      // We'll use a simple directional lighting model
-      // The face normal is just (0, 0, 1) for the front face
-      const dotProduct = lightDirZ; // Simplified dot product for front face
-      
-      // Map the dot product to shade
-      const lightIntensityFactor = window.config.lightIntensity / 100;
-      shadeFactor = 0.3 + 0.7 * Math.max(0, dotProduct) * lightIntensityFactor;
-    }
-    
-    // Only draw the front face if not using sidewalls only style
-    if (style.fillType !== 'sidewalls') {
-      // Draw the 3D cube - first the front face
-      p.beginShape();
-      
-      // Set fill color if specified
-      if (style.fill) {
-        const r = style.fill[0] * shadeFactor;
-        const g = style.fill[1] * shadeFactor;
-        const b = style.fill[2] * shadeFactor;
-        p.fill(r, g, b);
-      } else {
-        p.noFill();
-      }
-      
-      // Set stroke if specified
-      if (style.outline) {
-        if (style.outline.length > 3) {
-          p.stroke(style.outline[0], style.outline[1], style.outline[2], style.outline[3]);
-        } else {
-          p.stroke(style.outline[0], style.outline[1], style.outline[2]);
-        }
-        p.strokeWeight(window.config.strokeWeight);
-        console.log('Setting stroke weight:', window.config.strokeWeight); // Debug log
-      } else {
-        p.noStroke();
-      }
-      
-      // Front face
-      p.vertex(p1[0], p1[1], 0);
-      p.vertex(p2[0], p2[1], 0);
-      p.vertex(p3[0], p3[1], 0);
-      p.vertex(p4[0], p4[1], 0);
-      p.endShape(p.CLOSE);
-    }
-    
-    // Only draw the other faces if we have actual depth
-    if (actualDepth > 0) {
-      // Calculate back points
-      const backZ = -actualDepth;
-      
-      // Calculate darker shade for side faces
-      const sideShadeFactor = shadeFactor * 0.8; // Make sides slightly darker
-      
-      // Side faces (only if the cube has depth)
-      // Left face
-      p.beginShape();
-      if (style.fill) {
-        const r = style.fill[0] * sideShadeFactor;
-        const g = style.fill[1] * sideShadeFactor;
-        const b = style.fill[2] * sideShadeFactor;
-        p.fill(r, g, b);
-      }
-      p.vertex(p1[0], p1[1], 0);
-      p.vertex(p4[0], p4[1], 0);
-      p.vertex(p4[0], p4[1], backZ);
-      p.vertex(p1[0], p1[1], backZ);
-      p.endShape(p.CLOSE);
-      
-      // Right face
-      p.beginShape();
-      p.vertex(p2[0], p2[1], 0);
-      p.vertex(p3[0], p3[1], 0);
-      p.vertex(p3[0], p3[1], backZ);
-      p.vertex(p2[0], p2[1], backZ);
-      p.endShape(p.CLOSE);
-      
-      // Top face
-      p.beginShape();
-      const topShadeFactor = shadeFactor * 0.9; // Slightly darker
-      if (style.fill) {
-        const r = style.fill[0] * topShadeFactor;
-        const g = style.fill[1] * topShadeFactor;
-        const b = style.fill[2] * topShadeFactor;
-        p.fill(r, g, b);
-      }
-      p.vertex(p1[0], p1[1], 0);
-      p.vertex(p2[0], p2[1], 0);
-      p.vertex(p2[0], p2[1], backZ);
-      p.vertex(p1[0], p1[1], backZ);
-      p.endShape(p.CLOSE);
-      
-      // Bottom face
-      p.beginShape();
-      p.vertex(p4[0], p4[1], 0);
-      p.vertex(p3[0], p3[1], 0);
-      p.vertex(p3[0], p3[1], backZ);
-      p.vertex(p4[0], p4[1], backZ);
-      p.endShape(p.CLOSE);
-      
-      // Only draw the back face if not using sidewalls only style
-      if (style.fillType !== 'sidewalls') {
-        // Back face
-        p.beginShape();
-        const backShadeFactor = shadeFactor * 0.7; // Make back face darker
-        if (style.fill) {
-          const r = style.fill[0] * backShadeFactor;
-          const g = style.fill[1] * backShadeFactor;
-          const b = style.fill[2] * backShadeFactor;
-          p.fill(r, g, b);
-        }
-        p.vertex(p1[0], p1[1], backZ);
-        p.vertex(p2[0], p2[1], backZ);
-        p.vertex(p3[0], p3[1], backZ);
-        p.vertex(p4[0], p4[1], backZ);
-        p.endShape(p.CLOSE);
-      }
-    }
-    
-    squaresDrawn++;
-    
-    return [p3, p4];
-  }
-  
-  function drawTriangle(p1, p2, depth, angle, mirror, scrollProgress) {
-    // Convert angle to radians
-    let angle1 = p.PI * ((90 - angle) / 180);
-    let angle2 = p.PI * (angle / 180);
-    
-    if (mirror) {
-      [angle1, angle2] = [angle2, angle1];
-    }
-    
-    const angle3 = p.PI - angle1 - angle2;
-    
-    // Calculate vectors and lengths
-    const p1_to_p2 = [p2[0] - p1[0], p2[1] - p1[1]];
-    const length_p1_to_p2 = Math.sqrt(p1_to_p2[0] * p1_to_p2[0] + p1_to_p2[1] * p1_to_p2[1]);
-    const length_p1_to_p3 = length_p1_to_p2 * Math.sin(angle2) / Math.sin(angle3);
-    
-    const x = p1_to_p2[0];
-    const y = p1_to_p2[1];
-    
-    // Calculate third point using the equations
-    const equation_1 = p1[0] * x + p1[1] * y + length_p1_to_p3 * length_p1_to_p2 * Math.cos(angle1);
-    const equation_2 = p2[1] * x - p2[0] * y + length_p1_to_p3 * length_p1_to_p2 * Math.sin(angle1);
-    
-    const factor = 1 / (length_p1_to_p2 * length_p1_to_p2);
-    const x3 = factor * (x * equation_1 - y * equation_2);
-    const y3 = factor * (y * equation_1 + x * equation_2);
-    
-    const p3 = [x3, y3];
-    
-    // Return the coordinates for the next branches
-    return [[p3, p1], [p2, p3]];
-  }
-  
-  function getStyle(depth, shape, scrollProgress) {
-    // Determine color based on depth and settings
-    let fillColor, outlineColor;
-    
-    switch(window.config.fillType) {
-      case 'outline':
-        // Just outlines, no fill
-        fillColor = null;
-        outlineColor = window.config.brandColor;
-        break;
-        
-      case 'solid':
-        // Solid fill based on depth
-        fillColor = (depth === 0) ? window.config.baseColor : window.config.brandColor;
-        outlineColor = null;
-        break;
-        
-      case 'sidewalls':
-        // Side walls only - use fill color but no outline
-        fillColor = (depth === 0) ? window.config.baseColor : window.config.brandColor;
-        outlineColor = window.config.brandColor; // Still need outline for the edges
-        break;
-        
-      case 'gradient':
-      default:
-        // Gradient fill based on depth
-        const colorIndex = constrain(map(depth, 0, window.config.maxDepth, 0, window.config.intermediateColors.length - 1), 0, window.config.intermediateColors.length - 1);
-        const lowerIndex = Math.floor(colorIndex);
-        const upperIndex = Math.ceil(colorIndex);
-        const blendFactor = colorIndex - lowerIndex;
-        
-        if (lowerIndex === upperIndex) {
-          fillColor = window.config.intermediateColors[lowerIndex];
-        } else {
-          // Blend between colors
-          fillColor = [
-            lerp(window.config.intermediateColors[lowerIndex][0], window.config.intermediateColors[upperIndex][0], blendFactor),
-            lerp(window.config.intermediateColors[lowerIndex][1], window.config.intermediateColors[upperIndex][1], blendFactor),
-            lerp(window.config.intermediateColors[lowerIndex][2], window.config.intermediateColors[upperIndex][2], blendFactor)
-          ];
-        }
-        
-        // Progressively remove outline as we scroll
-        const outlineOpacity = map(scrollProgress, 0.3, 0.7, 255, 0);
-        outlineColor = (outlineOpacity > 0) ? [...window.config.brandColor, outlineOpacity] : null;
-        break;
-    }
-    
-    return {
-      fill: fillColor,
-      outline: outlineColor,
-      fillType: window.config.fillType
-    };
-  }
-  
-  p.windowResized = function() {
-    p.resizeCanvas(p.windowWidth, p.windowHeight);
-    needsUpdate = true;
-  };
-  
+  // Function to update performance metrics
   function updateMetrics(scrollProgress) {
-    const metricsElem = document.getElementById('metrics');
+    frameCount++;
+    const currentTime = performance.now();
     
-    metricsElem.innerHTML = `
-      <h4>Debug Information</h4>
-      Current Depth: ${currentDepth}/${window.config.maxDepth}<br>
-      Squares Drawn: ${squaresDrawn}<br>
-      Render Time: ${renderTime.toFixed(2)}ms<br>
-      Zoom Factor: ${zoomFactor.toFixed(2)}x<br>
-      Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%<br>
-      Growth: ${window.config.growthStart}% to ${window.config.growthEnd}%<br>
-      Branch Angle: ${Math.round(window.config.branchAngle)}° (Auto: ${window.config.autoAngle ? "On" : "Off"})<br>
-      Position: X:${Math.round(window.config.xPosition)}%, Y:${Math.round(window.config.yPosition)}%, Z:${Math.round(window.config.zPosition)} (Auto: ${window.config.autoMove ? "On" : "Off"})<br>
-      Rotation: X:${Math.round(window.config.rotationX)}°, Y:${Math.round(window.config.rotationY)}°, Z:${Math.round(window.config.rotationZ)}° (Auto: ${window.config.autoRotate ? "On" : "Off"})<br>
-      Pixel Depth: ${Math.round(window.config.pixelDepth)} (Auto: ${window.config.autoDepth ? "On" : "Off"})<br>
-      Light Angle: X:${Math.round(window.config.lightAngleX)}°, Y:${Math.round(window.config.lightAngleY)}° (Intensity: ${window.config.lightIntensity}%)
-    `;
+    // Update FPS every second
+    if (currentTime - lastFpsUpdate >= 1000) {
+      fps = frameCount;
+      frameCount = 0;
+      lastFpsUpdate = currentTime;
+    }
+
+    const metrics = {
+      fps,
+      renderTime,
+      squaresDrawn,
+      scrollProgress,
+      zoomFactor,
+      currentDepth
+    };
+
+    const metricsElement = document.getElementById('metrics');
+    if (metricsElement) {
+      metricsElement.innerHTML = `
+        <h4>Debug Information</h4>
+        <pre>${JSON.stringify(metrics, null, 2)}</pre>
+      `;
+    }
   }
-  
-  // Event listeners
-  window.addEventListener('scroll', function() {
-    needsUpdate = true;
-    lastScrollY = window.scrollY;
-  });
+
+  // Setup function
+  p.setup = function() {
+    debug.info('P5 setup called');
+    try {
+      p.createCanvas(window.innerWidth, window.innerHeight, p.WEBGL);
+      p.colorMode(p.RGB, 255); // Set to p5's default color mode
+      p.rectMode(p.CENTER);
+      p.noStroke();
+      setupControlPanel();
+      loadSavedPreset();
+      debug.info('P5 setup completed successfully');
+    } catch (error) {
+      debug.error('Failed to complete P5 setup:', error);
+    }
+  };
+
+  // Draw function
+  p.draw = function() {
+    const currentTime = performance.now();
+    const deltaTime = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+
+    try {
+      // Clear background
+      p.background(255); // Using p5's default color mode (0-255)
+
+      // Update scroll position
+      const scrollY = window.scrollY;
+      const scrollProgress = (scrollY - lastScrollY) / window.innerHeight;
+      lastScrollY = scrollY;
+
+      // Update zoom
+      if (window.config.autoMove) {
+        targetZoom = p.lerp(targetZoom, window.config.maxZoom, window.config.zoomSpeed);
+      }
+      zoomFactor = p.lerp(zoomFactor, targetZoom, window.config.zoomSpeed);
+
+      // Update rotation
+      if (window.config.autoRotate) {
+        window.config.rotationX += window.config.rotationSpeed * deltaTime;
+        window.config.rotationY += window.config.rotationSpeed * deltaTime;
+        window.config.rotationZ += window.config.rotationSpeed * deltaTime;
+      }
+
+      // Update position
+      if (window.config.autoMove) {
+        window.config.xPosition = (window.config.xPosition + window.config.moveSpeed * deltaTime) % 100;
+        window.config.yPosition = (window.config.yPosition + window.config.moveSpeed * deltaTime) % 100;
+        window.config.zPosition = p.sin(p.frameCount * window.config.moveSpeed * 0.001) * 50;
+      }
+
+      // Update branch angle
+      if (window.config.autoAngle) {
+        window.config.branchAngle += window.config.angleSpeed * deltaTime;
+      }
+
+      // Draw tree
+      p.push();
+      p.translate(
+        p.map(window.config.xPosition, 0, 100, -p.width/2, p.width/2),
+        p.map(window.config.yPosition, 0, 100, -p.height/2, p.height/2),
+        window.config.zPosition
+      );
+      p.rotateX(p.radians(window.config.rotationX));
+      p.rotateY(p.radians(window.config.rotationY));
+      p.rotateZ(p.radians(window.config.rotationZ));
+      p.scale(zoomFactor);
+
+      const startTime = performance.now();
+      drawBoxcurveTree(0, 0, window.config.startingSize, window.config.startDepth, scrollProgress);
+      renderTime = performance.now() - startTime;
+
+      p.pop();
+
+      // Update metrics
+      updateMetrics(scrollProgress);
+
+      // Check for updates
+      checkForUpdates();
+    } catch (error) {
+      debug.error('Error in draw loop:', error);
+    }
+  };
+
+  // Window resize handler
+  p.windowResized = function() {
+    debug.info('Window resize detected');
+    try {
+      p.resizeCanvas(window.innerWidth, window.innerHeight);
+      debug.info('Canvas resized successfully');
+    } catch (error) {
+      debug.error('Failed to resize canvas:', error);
+    }
+  };
 } 
