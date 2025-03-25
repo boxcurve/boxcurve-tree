@@ -218,8 +218,15 @@ class ControlPanel {
     const renderEngineSelect = document.getElementById('renderEngine');
     if (renderEngineSelect) {
       renderEngineSelect.addEventListener('change', function() {
-        updateConfig('renderEngine', this.value);
-        localStorage.setItem('renderEngine', this.value);
+        const newEngine = this.value;
+        console.log('Changing render engine to:', newEngine);
+        
+        // Set the new engine in config and localStorage
+        updateConfig('renderEngine', newEngine);
+        localStorage.setItem('renderEngine', newEngine);
+        
+        // Reload page to apply the change
+        window.location.reload();
       });
       renderEngineSelect.value = window.config.renderEngine;
     }
