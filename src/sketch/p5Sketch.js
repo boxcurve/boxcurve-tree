@@ -1,4 +1,5 @@
 import { lerp, constrain, map } from '../utils/helpers.js';
+import './q5Sketch.js';
 
 // Global p5.js instance
 let p5Instance;
@@ -9,10 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const controlPanel = document.getElementById('controlPanel');
   const showPanelButton = document.getElementById('showPanel');
   const hidePanelButton = document.getElementById('hidePanel');
+  const rendererModeSelect = document.getElementById('rendererMode');
 
   console.log('Control Panel:', controlPanel);
   console.log('Show Panel Button:', showPanelButton);
   console.log('Hide Panel Button:', hidePanelButton);
+  console.log('Renderer Mode Select:', rendererModeSelect);
 
   if (showPanelButton) {
     showPanelButton.addEventListener('click', function() {
@@ -33,11 +36,41 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  if (rendererModeSelect) {
+    rendererModeSelect.addEventListener('change', function() {
+      console.log('Renderer mode changed:', this.value);
+      switchRenderer(this.value);
+    });
+  }
 });
 
-// Wait for both DOM and config to be ready
-function initializeSketch() {
-  console.log('Initializing sketch...');
+// Function to switch between renderers
+function switchRenderer(mode) {
+  console.log('Switching renderer to:', mode);
+  
+  // Clean up existing renderer
+  if (p5Instance) {
+    p5Instance.remove();
+    p5Instance = null;
+  }
+  
+  if (q5Instance) {
+    q5Instance.remove();
+    q5Instance = null;
+  }
+
+  // Initialize new renderer
+  if (mode === 'p5') {
+    initializeP5Sketch();
+  } else if (mode === 'q5') {
+    initializeQ5Sketch();
+  }
+}
+
+// Initialize p5.js sketch
+function initializeP5Sketch() {
+  console.log('Initializing p5.js sketch...');
   console.log('window.config:', window.config);
   if (window.config) {
     console.log('Creating p5 instance...');
@@ -45,14 +78,15 @@ function initializeSketch() {
     console.log('P5 sketch initialized:', p5Instance);
   } else {
     console.log('Waiting for config...');
-    setTimeout(initializeSketch, 100);
+    setTimeout(initializeP5Sketch, 100);
   }
 }
 
 // Initialize when DOM is ready
 window.addEventListener('load', function() {
   console.log('Window loaded');
-  initializeSketch();
+  // Start with p5.js by default
+  initializeP5Sketch();
 });
 
 // Define the sketch
