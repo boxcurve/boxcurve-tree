@@ -214,6 +214,16 @@ class ControlPanel {
       });
     }
 
+    // Setup render engine selector
+    const renderEngineSelect = document.getElementById('renderEngine');
+    if (renderEngineSelect) {
+      renderEngineSelect.addEventListener('change', function() {
+        updateConfig('renderEngine', this.value);
+        localStorage.setItem('renderEngine', this.value);
+      });
+      renderEngineSelect.value = window.config.renderEngine;
+    }
+
     // Setup stroke weight control
     const strokeWeightInput = document.getElementById('strokeWeight');
     const strokeWeightNumber = document.getElementById('strokeWeightNumber');

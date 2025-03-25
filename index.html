@@ -9,7 +9,13 @@
   <script type="module" src="src/config/config.js"></script>
   <script type="module" src="src/ui/controlPanel.js"></script>
   <script type="module" src="src/svg/svgExport.js"></script>
-  <script type="module" src="src/sketch/p5Sketch.js"></script>
+  <script type="module">
+    if (window.config.renderEngine === 'q5') {
+      import('./src/sketch/q5Sketch.js');
+    } else {
+      import('./src/sketch/p5Sketch.js');
+    }
+  </script>
 </head>
 <body>
   <div class="content">
@@ -47,6 +53,15 @@
       <button id="preset1">Classic Tree</button>
       <button id="preset2">Spiral Galaxy</button>
       <button id="preset3">Static</button>
+    </div>
+    
+    <!-- Insert Render Engine Selector -->
+    <div class="control-group">
+      <label for="renderEngine" class="control-label">Render Engine</label>
+      <select id="renderEngine" class="control-input">
+        <option value="p5">p5</option>
+        <option value="q5">q5</option>
+      </select>
     </div>
     
     <!-- Tree Structure Control Group -->

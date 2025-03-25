@@ -3,6 +3,7 @@ window.config = {
   // Tree Structure
   maxDepth: 7,
   startDepth: 2,
+  renderEngine: localStorage.getItem('renderEngine') || 'p5',
   branchAngle: 35,
   autoAngle: true,
   angleSpeed: 0.3,
