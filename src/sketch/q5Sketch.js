@@ -381,32 +381,26 @@ function sketch(q) {
 
   // Function to update performance metrics
   function updateMetrics(scrollProgress) {
-    frameCount++;
-    const currentTime = performance.now();
+    const metricsElem = document.getElementById('metrics');
+    if (!metricsElem) return;
     
-    // Update FPS every second
-    if (currentTime - lastFpsUpdate >= 1000) {
-      fps = frameCount;
-      frameCount = 0;
-      lastFpsUpdate = currentTime;
-    }
-
-    const metrics = {
-      fps,
-      renderTime,
-      squaresDrawn,
-      scrollProgress,
-      zoomFactor,
-      currentDepth
-    };
-
-    const metricsElement = document.getElementById('metrics');
-    if (metricsElement) {
-      metricsElement.innerHTML = `
-        <h4>Debug Information</h4>
-        <pre>${JSON.stringify(metrics, null, 2)}</pre>
-      `;
-    }
+    metricsElem.innerHTML = `
+      <h4>Debug Information</h4>
+      <div class="metrics-container">
+        <div class="metric-row">Current Depth: ${currentDepth}/${window.config.maxDepth}</div>
+        <div class="metric-row">Squares Drawn: ${squaresDrawn}</div>
+        <div class="metric-row">Render Time: ${renderTime.toFixed(2)}ms</div>
+        <div class="metric-row">Zoom Factor: ${zoomFactor.toFixed(2)}x</div>
+        <div class="metric-row">Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%</div>
+        <div class="metric-row">Growth: ${window.config.growthStart}% to ${window.config.growthEnd}%</div>
+        <div class="metric-row">Branch Angle: ${Math.round(window.config.branchAngle)}° (Auto: ${window.config.autoAngle ? "On" : "Off"})</div>
+        <div class="metric-row">Position: X:${Math.round(window.config.xPosition)}%, Y:${Math.round(window.config.yPosition)}%, Z:${Math.round(window.config.zPosition)} (Auto: ${window.config.autoMove ? "On" : "Off"})</div>
+        <div class="metric-row">Rotation: X:${Math.round(window.config.rotationX)}°, Y:${Math.round(window.config.rotationY)}°, Z:${Math.round(window.config.rotationZ)}° (Auto: ${window.config.autoRotate ? "On" : "Off"})</div>
+        <div class="metric-row">Pixel Depth: ${Math.round(window.config.pixelDepth)} (Auto: ${window.config.autoDepth ? "On" : "Off"})</div>
+        <div class="metric-row">Light Angle: X:${Math.round(window.config.lightAngleX)}°, Y:${Math.round(window.config.lightAngleY)}° (Intensity: ${window.config.lightIntensity}%)</div>
+        <div class="metric-row">Renderer: q5.js</div>
+      </div>
+    `;
   }
 
   // Add these placeholder functions for drawing the tree
@@ -423,6 +417,221 @@ function sketch(q) {
     
     // Record that we drew a square
     squaresDrawn = 1;
+  }
+
+  // REPLACE WITH THESE ACTUAL TREE GENERATION FUNCTIONS:
+
+  function drawBoxcurveTree(x, y, size, depth, scrollProgress) {
+    q.push();
+    q.translate(x, y);
+    
+    if (depth > 0) {
+      const p1 = [-size / 2, -size / 2];
+      const p2 = [size / 2, -size / 2];
+      generateTree([p1, p2], 0, depth, scrollProgress);
+    }
+    
+    q.pop();
+  }
+  
+  function generateTree(coordSet, depth, maxDepth, scrollProgress) {
+    if (depth >= maxDepth) return;
+    
+    const p1 = coordSet[0];
+    const p2 = coordSet[1];
+    
+    // Draw the cube (square in 2D mode)
+    const cubeCoordSet = drawCube(p1, p2, depth, scrollProgress);
+    
+    // Calculate next squares
+    const size = Math.sqrt(
+      Math.pow(p1[0] - p2[0], 2) + 
+      Math.pow(p1[1] - p2[1], 2)
+    );
+    const nextSize = size * window.config.scaleFactor;
+    
+    // Draw the triangle for branch connection
+    const triangleCoordSets = drawTriangle(cubeCoordSet[0], cubeCoordSet[1], depth, window.config.branchAngle, mirror, scrollProgress);
+    
+    // Continue with recursion for next branches
+    for (let nextCoordSet of triangleCoordSets) {
+      generateTree(nextCoordSet, depth + 1, maxDepth, scrollProgress);
+    }
+  }
+  
+  function drawCube(p1, p2, depth, scrollProgress) {
+    // Calculate the other two points of the square
+    const p1_to_p2 = [p1[0] - p2[0], p1[1] - p2[1]];
+    const p1_to_p4 = [-p1_to_p2[1], p1_to_p2[0]];
+    
+    const p3 = [p2[0] + p1_to_p4[0], p2[1] + p1_to_p4[1]];
+    const p4 = [p1[0] + p1_to_p4[0], p1[1] + p1_to_p4[1]];
+    
+    // Get style based on settings
+    const style = getStyle(depth, "cube", scrollProgress);
+    
+    // Calculate actual depth based on settings (used for shading)
+    let actualDepth = window.config.pixelDepth;
+    
+    // Vary depth by level if enabled
+    if (window.config.depthByLevel) {
+      actualDepth = window.config.pixelDepth * (1.0 - (depth / window.config.maxDepth) * 0.5);
+    }
+    
+    // Calculate lighting effect if enabled
+    let shadeFactor = 1.0;
+    
+    if (window.config.enableLighting) {
+      // Convert light angles to radians
+      const lightX = q.radians(window.config.lightAngleX);
+      const lightY = q.radians(window.config.lightAngleY);
+      
+      // Calculate light direction vector (simplified)
+      const lightDirX = Math.cos(lightY) * Math.sin(lightX);
+      const lightDirY = Math.sin(lightY);
+      const lightDirZ = Math.cos(lightY) * Math.cos(lightX);
+      
+      // We'll use a simple directional lighting model
+      // The face normal is just (0, 0, 1) for the front face
+      const dotProduct = lightDirZ; // Simplified dot product for front face
+      
+      // Map the dot product to shade
+      const lightIntensityFactor = window.config.lightIntensity / 100;
+      shadeFactor = 0.3 + 0.7 * Math.max(0, dotProduct) * lightIntensityFactor;
+    }
+    
+    // In 2D mode, we just draw a square
+    q.beginShape();
+    
+    // Set fill color if specified
+    if (style.fill) {
+      const r = style.fill[0] * shadeFactor / 255;
+      const g = style.fill[1] * shadeFactor / 255;
+      const b = style.fill[2] * shadeFactor / 255;
+      q.fill(r, g, b);
+    } else {
+      q.noFill();
+    }
+    
+    // Set stroke if specified
+    if (style.outline) {
+      if (style.outline.length > 3) {
+        q.stroke(
+          style.outline[0] / 255, 
+          style.outline[1] / 255, 
+          style.outline[2] / 255, 
+          style.outline[3] / 255
+        );
+      } else {
+        q.stroke(
+          style.outline[0] / 255, 
+          style.outline[1] / 255, 
+          style.outline[2] / 255
+        );
+      }
+      q.strokeWeight(window.config.strokeWeight);
+    } else {
+      q.noStroke();
+    }
+    
+    // Draw the square with 4 vertices
+    q.vertex(p1[0], p1[1]);
+    q.vertex(p2[0], p2[1]);
+    q.vertex(p3[0], p3[1]);
+    q.vertex(p4[0], p4[1]);
+    q.endShape(q.CLOSE);
+    
+    squaresDrawn++;
+    
+    return [p3, p4];
+  }
+  
+  function drawTriangle(p1, p2, depth, angle, mirror, scrollProgress) {
+    // Convert angle to radians
+    let angle1 = Math.PI * ((90 - angle) / 180);
+    let angle2 = Math.PI * (angle / 180);
+    
+    if (mirror) {
+      [angle1, angle2] = [angle2, angle1];
+    }
+    
+    const angle3 = Math.PI - angle1 - angle2;
+    
+    // Calculate vectors and lengths
+    const p1_to_p2 = [p2[0] - p1[0], p2[1] - p1[1]];
+    const length_p1_to_p2 = Math.sqrt(p1_to_p2[0] * p1_to_p2[0] + p1_to_p2[1] * p1_to_p2[1]);
+    const length_p1_to_p3 = length_p1_to_p2 * Math.sin(angle2) / Math.sin(angle3);
+    
+    const x = p1_to_p2[0];
+    const y = p1_to_p2[1];
+    
+    // Calculate third point using the equations
+    const equation_1 = p1[0] * x + p1[1] * y + length_p1_to_p3 * length_p1_to_p2 * Math.cos(angle1);
+    const equation_2 = p2[1] * x - p2[0] * y + length_p1_to_p3 * length_p1_to_p2 * Math.sin(angle1);
+    
+    const factor = 1 / (length_p1_to_p2 * length_p1_to_p2);
+    const x3 = factor * (x * equation_1 - y * equation_2);
+    const y3 = factor * (y * equation_1 + x * equation_2);
+    
+    const p3 = [x3, y3];
+    
+    // Return the coordinates for the next branches
+    return [[p3, p1], [p2, p3]];
+  }
+  
+  function getStyle(depth, shape, scrollProgress) {
+    // Determine color based on depth and settings
+    let fillColor, outlineColor;
+    
+    switch(window.config.fillType) {
+      case 'outline':
+        // Just outlines, no fill
+        fillColor = null;
+        outlineColor = window.config.brandColor;
+        break;
+        
+      case 'solid':
+        // Solid fill based on depth
+        fillColor = (depth === 0) ? window.config.baseColor : window.config.brandColor;
+        outlineColor = null;
+        break;
+        
+      case 'sidewalls':
+        // Side walls only - use fill color but no outline
+        fillColor = (depth === 0) ? window.config.baseColor : window.config.brandColor;
+        outlineColor = window.config.brandColor; // Still need outline for the edges
+        break;
+        
+      case 'gradient':
+      default:
+        // Gradient fill based on depth
+        const colorIndex = constrain(map(depth, 0, window.config.maxDepth, 0, window.config.intermediateColors.length - 1), 0, window.config.intermediateColors.length - 1);
+        const lowerIndex = Math.floor(colorIndex);
+        const upperIndex = Math.ceil(colorIndex);
+        const blendFactor = colorIndex - lowerIndex;
+        
+        if (lowerIndex === upperIndex) {
+          fillColor = window.config.intermediateColors[lowerIndex];
+        } else {
+          // Blend between colors
+          fillColor = [
+            lerp(window.config.intermediateColors[lowerIndex][0], window.config.intermediateColors[upperIndex][0], blendFactor),
+            lerp(window.config.intermediateColors[lowerIndex][1], window.config.intermediateColors[upperIndex][1], blendFactor),
+            lerp(window.config.intermediateColors[lowerIndex][2], window.config.intermediateColors[upperIndex][2], blendFactor)
+          ];
+        }
+        
+        // Progressively remove outline as we scroll
+        const outlineOpacity = map(scrollProgress, 0.3, 0.7, 255, 0);
+        outlineColor = (outlineOpacity > 0) ? [...window.config.brandColor, outlineOpacity] : null;
+        break;
+    }
+    
+    return {
+      fill: fillColor,
+      outline: outlineColor,
+      fillType: window.config.fillType
+    };
   }
 
   // Also add a helper function to safely call q5 methods that might not exist
@@ -462,71 +671,177 @@ function sketch(q) {
   // Draw function
   q.draw = function() {
     const currentTime = performance.now();
-    const deltaTime = currentTime - lastFrameTime;
+    const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
     lastFrameTime = currentTime;
+    frameCount++;
 
     try {
-      // Clear background
-      q.background(1); // Using float-based color mode (1 = white)
-
-      // Update scroll position
-      const scrollY = window.scrollY;
-      const scrollProgress = (scrollY - lastScrollY) / window.innerHeight;
-      lastScrollY = scrollY;
-
-      // Update zoom
-      if (window.config.autoMove) {
-        targetZoom = q.lerp(targetZoom, window.config.maxZoom, window.config.zoomSpeed);
-      }
-      zoomFactor = q.lerp(zoomFactor, targetZoom, window.config.zoomSpeed);
-
-      // Update rotation
-      if (window.config.autoRotate) {
-        window.config.rotationX += window.config.rotationSpeed * deltaTime;
-        window.config.rotationY += window.config.rotationSpeed * deltaTime;
-        window.config.rotationZ += window.config.rotationSpeed * deltaTime;
-      }
-
-      // Update position
-      if (window.config.autoMove) {
-        window.config.xPosition = (window.config.xPosition + window.config.moveSpeed * deltaTime) % 100;
-        window.config.yPosition = (window.config.yPosition + window.config.moveSpeed * deltaTime) % 100;
-        window.config.zPosition = q.sin(q.frameCount * window.config.moveSpeed * 0.001) * 50;
-      }
-
-      // Update branch angle
-      if (window.config.autoAngle) {
-        window.config.branchAngle += window.config.angleSpeed * deltaTime;
-      }
-
-      // Draw tree
-      q.push();
+      // Check for updates first
+      checkForUpdates();
       
-      // Position translation - Only use 2D coordinates with q5
-      q.translate(
-        q.map(window.config.xPosition, 0, 100, -q.width/2, q.width/2),
-        q.map(window.config.yPosition, 0, 100, -q.height/2, q.height/2)
+      // Handle auto-animations
+      if (window.config.autoRotate || window.config.autoMove || window.config.autoAngle || window.config.autoDepth) {
+        if (window.config.autoRotate) {
+          window.config.rotationY += window.config.rotationSpeed * deltaTime * 15;
+          window.config.rotationZ += window.config.rotationSpeed * deltaTime * 5;
+          
+          if (window.config.rotationY > 180) window.config.rotationY -= 360;
+          if (window.config.rotationZ > 180) window.config.rotationZ -= 360;
+          
+          const rotYElement = document.getElementById('rotationY');
+          const rotYValueElement = document.getElementById('rotationYValue');
+          if (rotYElement) rotYElement.value = window.config.rotationY;
+          if (rotYValueElement) rotYValueElement.textContent = Math.round(window.config.rotationY) + '°';
+          
+          const rotZElement = document.getElementById('rotationZ');
+          const rotZValueElement = document.getElementById('rotationZValue');
+          if (rotZElement) rotZElement.value = window.config.rotationZ;
+          if (rotZValueElement) rotZValueElement.textContent = Math.round(window.config.rotationZ) + '°';
+        }
+        
+        if (window.config.autoMove) {
+          window.config.movePhase += window.config.moveSpeed * deltaTime;
+          if (window.config.movePhase > Math.PI * 2) window.config.movePhase -= Math.PI * 2;
+          
+          const xRange = 30;
+          const yRange = 8;
+          const zRange = 100;
+          
+          const newX = 50 + xRange * Math.sin(window.config.movePhase);
+          const newY = 50 + yRange * Math.cos(window.config.movePhase * 0.3);
+          const newZ = zRange * Math.sin(window.config.movePhase * 0.5);
+          
+          const xzLerpFactor = Math.min(0.05 * (60 * deltaTime), 0.2);
+          const yLerpFactor = Math.min(0.02 * (60 * deltaTime), 0.08);
+          
+          window.config.xPosition = lerp(window.config.xPosition, newX, xzLerpFactor);
+          window.config.yPosition = lerp(window.config.yPosition, newY, yLerpFactor);
+          window.config.zPosition = lerp(window.config.zPosition, newZ, xzLerpFactor);
+          
+          if (frameCount % 5 === 0) {
+            const xPosElement = document.getElementById('xPosition');
+            const xPosValueElement = document.getElementById('xPositionValue');
+            if (xPosElement) xPosElement.value = Math.round(window.config.xPosition);
+            if (xPosValueElement) xPosValueElement.textContent = Math.round(window.config.xPosition) + '%';
+            
+            const yPosElement = document.getElementById('yPosition');
+            const yPosValueElement = document.getElementById('yPositionValue');
+            if (yPosElement) yPosElement.value = Math.round(window.config.yPosition);
+            if (yPosValueElement) yPosValueElement.textContent = Math.round(window.config.yPosition) + '%';
+            
+            const zPosElement = document.getElementById('zPosition');
+            const zPosValueElement = document.getElementById('zPositionValue');
+            if (zPosElement) zPosElement.value = Math.round(window.config.zPosition);
+            if (zPosValueElement) zPosValueElement.textContent = Math.round(window.config.zPosition);
+          }
+        }
+        
+        if (window.config.autoAngle) {
+          window.config.anglePhase += window.config.angleSpeed * deltaTime;
+          if (window.config.anglePhase > Math.PI * 2) window.config.anglePhase -= Math.PI * 2;
+          
+          const minAngle = 15;
+          const maxAngle = 75;
+          const range = maxAngle - minAngle;
+          
+          const newAngle = minAngle + range * (0.5 + 0.5 * Math.sin(window.config.anglePhase));
+          window.config.branchAngle = newAngle;
+          
+          const branchAngleElement = document.getElementById('branchAngle');
+          const branchAngleValueElement = document.getElementById('branchAngleValue');
+          if (branchAngleElement) branchAngleElement.value = Math.round(newAngle);
+          if (branchAngleValueElement) branchAngleValueElement.textContent = Math.round(newAngle) + '°';
+        }
+        
+        if (window.config.autoDepth) {
+          window.config.depthPhase += 0.2 * deltaTime;
+          if (window.config.depthPhase > Math.PI * 2) window.config.depthPhase -= Math.PI * 2;
+          
+          const minDepth = 5;
+          const maxDepth = 25;
+          const rangeDepth = maxDepth - minDepth;
+          
+          const newDepth = minDepth + rangeDepth * (0.5 + 0.5 * Math.sin(window.config.depthPhase));
+          window.config.pixelDepth = newDepth;
+          
+          const pixelDepthElement = document.getElementById('pixelDepth');
+          const pixelDepthValueElement = document.getElementById('pixelDepthValue');
+          if (pixelDepthElement) pixelDepthElement.value = Math.round(newDepth);
+          if (pixelDepthValueElement) pixelDepthValueElement.textContent = Math.round(newDepth);
+        }
+        
+        needsUpdate = true;
+      }
+      
+      if (!needsUpdate) return;
+      
+      // Start measuring rendering time
+      const startTime = performance.now();
+      squaresDrawn = 0;
+      
+      // Clear the canvas
+      q.background(1); // Clear with white in float-based color mode
+      
+      // Calculate scroll progress (0-1 based on page scroll position)
+      const scrollProgress = constrain(window.scrollY / (document.body.scrollHeight - window.innerHeight), 0, 1);
+      
+      // Calculate normalized scroll progress based on growth start/end settings
+      const growthRange = window.config.growthEnd - window.config.growthStart;
+      const normalizedScrollProgress = constrain(
+        map(scrollProgress * 100, window.config.growthStart, window.config.growthEnd, 0, 1), 
+        0, 
+        1
       );
       
-      // Apply 2D rotation only (q5 doesn't support 3D rotations)
-      if (typeof q.rotate === 'function') {
-        q.rotate(q.radians(window.config.rotationZ));
+      // Map the normalized scroll progress to determine tree depth
+      currentDepth = Math.floor(map(normalizedScrollProgress, 0, 1, window.config.startDepth, window.config.maxDepth));
+      
+      // Calculate target zoom based on scroll
+      targetZoom = map(scrollProgress, 0, 1, 1.0, window.config.maxZoom);
+      
+      // Smoothly adjust zoom
+      zoomFactor += (targetZoom - zoomFactor) * window.config.zoomSpeed;
+      
+      // Ensure zoom is exactly 1.0 when at the top of the page (with a small tolerance)
+      if (scrollProgress < 0.01) {
+        zoomFactor = lerp(zoomFactor, 1.0, 0.1);  // Faster convergence to 1.0 when near top
+        if (Math.abs(zoomFactor - 1.0) < 0.01) {
+          zoomFactor = 1.0;  // Snap to exactly 1.0 when very close
+        }
       }
       
-      // Scale
+      // Apply transformations and draw the tree
+      q.push();
+      
+      // Position in screen coordinates
+      const xPos = map(window.config.xPosition, 0, 100, -q.width/2, q.width/2);
+      const yPos = map(window.config.yPosition, 0, 100, -q.height/2, q.height/2);
+      q.translate(xPos, yPos);
+      
+      // Apply 2D rotation (only Z rotation works in 2D mode)
+      q.rotate(q.radians(window.config.rotationZ));
+      
+      // Scale based on zoom factor
       q.scale(zoomFactor);
-
-      const startTime = performance.now();
-      drawBoxcurveTree(0, 0, window.config.startingSize, window.config.startDepth, scrollProgress);
-      renderTime = performance.now() - startTime;
-
+      
+      // Draw the tree with current depth
+      drawBoxcurveTree(0, 0, window.config.startingSize, currentDepth, scrollProgress);
+      
       q.pop();
-
-      // Update metrics
+      
+      // Update render time
+      renderTime = performance.now() - startTime;
+      
+      // Update metrics in UI
       updateMetrics(scrollProgress);
-
-      // Check for updates
-      checkForUpdates();
+      
+      // Mark update as complete
+      needsUpdate = false;
+      
+      // Log success
+      if (squaresDrawn > 0 && frameCount % 60 === 0) {
+        debug.info(`Frame rendered with ${squaresDrawn} squares`);
+      }
     } catch (error) {
       debug.error('Error in draw loop:', error);
     }
