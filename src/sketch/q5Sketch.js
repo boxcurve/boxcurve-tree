@@ -31,29 +31,40 @@ async function initializeQ5Sketch() {
 
   debug.info('Config found, proceeding with initialization...');
   
+  // First check if Q5 is available
+  if (typeof Q5 === 'undefined') {
+    debug.error('Q5 library not found! Make sure q5.js is properly loaded.');
+    document.body.innerHTML += '<div style="color:red;background:black;padding:20px;position:fixed;top:0;left:0;right:0;z-index:9999">Q5 library not found. Make sure q5.js is properly loaded.</div>';
+    return;
+  }
+  
   try {
-    debug.info('Initializing WebGPU via Q5...');
+    debug.info('Checking for WebGPU support...');
     
-    // Initialize Q5 with WebGPU
-    const q = await Q5.WebGPU();
+    // Initialize Q5 - try WebGPU method first if it exists
+    let q;
+    if (typeof Q5.WebGPU === 'function') {
+      try {
+        debug.info('Attempting to use WebGPU renderer...');
+        q = await Q5.WebGPU();
+        debug.info('WebGPU renderer initialized successfully!');
+      } catch (webgpuError) {
+        debug.warn('WebGPU not available:', webgpuError);
+        debug.info('Falling back to standard Q5 renderer');
+        q = new Q5();
+      }
+    } else {
+      debug.info('WebGPU method not available, using standard Q5 renderer');
+      q = new Q5();
+    }
     
     // Run the sketch with the q instance
     sketch(q);
     
-    debug.info('Q5 WebGPU sketch initialized successfully');
+    debug.info('Q5 sketch initialized successfully');
   } catch (error) {
-    debug.error('Failed to initialize WebGPU:', error);
-    debug.warn('Falling back to standard q5.js renderer...');
-    
-    try {
-      // Fallback to standard q5.js
-      const q = new Q5();
-      sketch(q);
-      debug.info('Q5 fallback sketch initialized successfully');
-    } catch (fallbackError) {
-      debug.error('Failed to initialize Q5 fallback:', fallbackError);
-      document.body.innerHTML += '<div style="color:red;background:black;padding:20px;position:fixed;top:0;left:0;right:0;z-index:9999">Failed to initialize Q5 renderer. Your browser may not support WebGPU or WebGL.</div>';
-    }
+    debug.error('Failed to initialize Q5:', error);
+    document.body.innerHTML += `<div style="color:red;background:black;padding:20px;position:fixed;top:0;left:0;right:0;z-index:9999">Failed to initialize Q5 renderer: ${error.message}</div>`;
   }
 }
 
@@ -398,13 +409,47 @@ function sketch(q) {
     }
   }
 
+  // Add these placeholder functions for drawing the tree
+  function drawBoxcurveTree(x, y, size, depth, scrollProgress) {
+    // Simple 2D version for testing
+    q.push();
+    q.translate(x, y);
+    
+    // Draw a simple square for testing
+    q.fill(0.8, 0.4, 0.2); // Orange in RGB float mode
+    q.rect(0, 0, size, size);
+    
+    q.pop();
+    
+    // Record that we drew a square
+    squaresDrawn = 1;
+  }
+
+  // Also add a helper function to safely call q5 methods that might not exist
+  function safeCall(object, methodName, ...args) {
+    if (typeof object[methodName] === 'function') {
+      return object[methodName](...args);
+    }
+    debug.warn(`Method ${methodName} is not available in this q5 instance`);
+    return null;
+  }
+
   // Setup function
   q.setup = function() {
     debug.info('Q5 setup called');
     try {
-      q.createCanvas(window.innerWidth, window.innerHeight, q.WEBGL);
+      // Force 2D context (no WEBGL) as 3D functions aren't fully supported
+      q.createCanvas(window.innerWidth, window.innerHeight);
+      debug.info('Canvas created with 2D renderer');
+      
+      // Set color mode
       q.colorMode(q.RGB, 1); // Set to q5's default float-based color mode
-      q.rectMode(q.CENTER);
+      
+      // Center rectangle mode
+      if (typeof q.rectMode === 'function') {
+        q.rectMode(q.CENTER);
+      }
+      
       q.noStroke();
       setupControlPanel();
       loadSavedPreset();
@@ -456,14 +501,19 @@ function sketch(q) {
 
       // Draw tree
       q.push();
+      
+      // Position translation - Only use 2D coordinates with q5
       q.translate(
         q.map(window.config.xPosition, 0, 100, -q.width/2, q.width/2),
-        q.map(window.config.yPosition, 0, 100, -q.height/2, q.height/2),
-        window.config.zPosition
+        q.map(window.config.yPosition, 0, 100, -q.height/2, q.height/2)
       );
-      q.rotateX(q.radians(window.config.rotationX));
-      q.rotateY(q.radians(window.config.rotationY));
-      q.rotateZ(q.radians(window.config.rotationZ));
+      
+      // Apply 2D rotation only (q5 doesn't support 3D rotations)
+      if (typeof q.rotate === 'function') {
+        q.rotate(q.radians(window.config.rotationZ));
+      }
+      
+      // Scale
       q.scale(zoomFactor);
 
       const startTime = performance.now();
@@ -492,7 +542,16 @@ function sketch(q) {
       debug.error('Failed to resize canvas:', error);
     }
   };
+}
 
-  // Export the initialization function
-  window.initializeQ5Sketch = initializeQ5Sketch;
-} 
+// Export the initialization function at the module level
+window.initializeQ5Sketch = initializeQ5Sketch;
+console.log('initializeQ5Sketch function exported to window object');
+
+// Auto-initialize after a brief delay to ensure all modules are loaded
+setTimeout(() => {
+  console.log('Auto-initializing Q5 sketch...');
+  if (typeof initializeQ5Sketch === 'function') {
+    initializeQ5Sketch();
+  }
+}, 10); 

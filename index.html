@@ -24,19 +24,17 @@
     // Initialize the selected engine
     if (window.config.renderEngine === 'q5') {
       console.log('Initializing q5 renderer');
+      
+      // Import the q5Sketch module - the module now self-initializes
       import('./src/sketch/q5Sketch.js')
-        .then(module => {
-          console.log('q5Sketch module loaded, initializing...');
-          // Wait for the next frame to ensure config is fully loaded
-          setTimeout(() => {
-            if (typeof window.initializeQ5Sketch === 'function') {
-              window.initializeQ5Sketch();
-            } else {
-              console.error('initializeQ5Sketch function not found');
-            }
-          }, 100);
+        .then(() => {
+          console.log('q5Sketch module loaded and initialization triggered');
+          // The module now automatically initializes itself
         })
-        .catch(err => console.error('Error loading q5Sketch:', err));
+        .catch(err => {
+          console.error('Error loading q5Sketch module:', err);
+          document.body.innerHTML += '<div style="color:red;background:black;padding:20px;position:fixed;top:0;left:0;right:0;z-index:9999">Failed to load Q5 sketch module: ' + err.message + '</div>';
+        });
     } else {
       console.log('Initializing p5 renderer');
       import('./src/sketch/p5Sketch.js')
