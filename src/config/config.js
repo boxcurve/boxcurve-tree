@@ -21,7 +21,7 @@ window.config = {
   maxZoom: 6.0,
   zoomSpeed: 0.1,
   growthStart: 2, // % scroll when tree starts growing
-  growthEnd: 100, // % scroll when tree reaches max depth
+  growthEnd: 80, // % scroll when tree reaches max depth - reduced to ensure it works with scroll range
   
   // Colors
   baseColor: [20, 40, 100], // Navy Blue #142864

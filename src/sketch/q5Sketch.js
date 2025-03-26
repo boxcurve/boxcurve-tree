@@ -370,12 +370,14 @@ function sketch(q) {
     }
   }
 
-  // Function to check for updates and redraw if needed
+  // Function to check for updates
   function checkForUpdates() {
-    if (needsUpdate) {
-      debug.info('Update needed, triggering redraw');
-      q.redraw();
-      needsUpdate = false;
+    // Only check if updates are needed, but don't trigger a redraw
+    // The q.draw() function will handle the actual drawing
+    if (window.controlPanel && window.controlPanel.isUpdateNeeded()) {
+      debug.info('Update needed from control panel');
+      needsUpdate = true;
+      window.controlPanel.resetUpdateFlag();
     }
   }
 
@@ -384,22 +386,24 @@ function sketch(q) {
     const metricsElem = document.getElementById('metrics');
     if (!metricsElem) return;
     
+    // Calculate scroll metrics
+    const maxScroll = document.body.scrollHeight - window.innerHeight;
+    const currentScroll = window.scrollY;
+    const scrollPercent = (currentScroll / maxScroll) * 100;
+    
     metricsElem.innerHTML = `
       <h4>Debug Information</h4>
-      <div class="metrics-container">
-        <div class="metric-row">Current Depth: ${currentDepth}/${window.config.maxDepth}</div>
-        <div class="metric-row">Squares Drawn: ${squaresDrawn}</div>
-        <div class="metric-row">Render Time: ${renderTime.toFixed(2)}ms</div>
-        <div class="metric-row">Zoom Factor: ${zoomFactor.toFixed(2)}x</div>
-        <div class="metric-row">Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%</div>
-        <div class="metric-row">Growth: ${window.config.growthStart}% to ${window.config.growthEnd}%</div>
-        <div class="metric-row">Branch Angle: ${Math.round(window.config.branchAngle)}° (Auto: ${window.config.autoAngle ? "On" : "Off"})</div>
-        <div class="metric-row">Position: X:${Math.round(window.config.xPosition)}%, Y:${Math.round(window.config.yPosition)}%, Z:${Math.round(window.config.zPosition)} (Auto: ${window.config.autoMove ? "On" : "Off"})</div>
-        <div class="metric-row">Rotation: X:${Math.round(window.config.rotationX)}°, Y:${Math.round(window.config.rotationY)}°, Z:${Math.round(window.config.rotationZ)}° (Auto: ${window.config.autoRotate ? "On" : "Off"})</div>
-        <div class="metric-row">Pixel Depth: ${Math.round(window.config.pixelDepth)} (Auto: ${window.config.autoDepth ? "On" : "Off"})</div>
-        <div class="metric-row">Light Angle: X:${Math.round(window.config.lightAngleX)}°, Y:${Math.round(window.config.lightAngleY)}° (Intensity: ${window.config.lightIntensity}%)</div>
-        <div class="metric-row">Renderer: q5.js</div>
-      </div>
+      Current Depth: ${currentDepth}/${window.config.maxDepth}<br>
+      Squares Drawn: ${squaresDrawn}<br>
+      Render Time: ${renderTime.toFixed(2)}ms<br>
+      Zoom Factor: ${zoomFactor.toFixed(2)}x<br>
+      Scroll Progress: ${(scrollProgress * 100).toFixed(1)}%<br>
+      Growth: ${window.config.growthStart}% to ${window.config.growthEnd}%<br>
+      Branch Angle: ${Math.round(window.config.branchAngle)}° (Auto: ${window.config.autoAngle ? "On" : "Off"})<br>
+      Position: X:${Math.round(window.config.xPosition)}%, Y:${Math.round(window.config.yPosition)}%, Z:${Math.round(window.config.zPosition)} (Auto: ${window.config.autoMove ? "On" : "Off"})<br>
+      Rotation: X:${Math.round(window.config.rotationX)}°, Y:${Math.round(window.config.rotationY)}°, Z:${Math.round(window.config.rotationZ)}° (Auto: ${window.config.autoRotate ? "On" : "Off"})<br>
+      Pixel Depth: ${Math.round(window.config.pixelDepth)} (Auto: ${window.config.autoDepth ? "On" : "Off"})<br>
+      Light Angle: X:${Math.round(window.config.lightAngleX)}°, Y:${Math.round(window.config.lightAngleY)}° (Intensity: ${window.config.lightIntensity}%)
     `;
   }
 
@@ -500,7 +504,9 @@ function sketch(q) {
       shadeFactor = 0.3 + 0.7 * Math.max(0, dotProduct) * lightIntensityFactor;
     }
     
-    // In 2D mode, we just draw a square
+    // NOTE: p5 version draws a true 3D cube in WEBGL mode with all 6 faces
+    // In q5's 2D mode, we can only draw the 2D projection (a square)
+    // For a future enhanced version, we could simulate 3D with multiple 2D shapes
     q.beginShape();
     
     // Set fill color if specified
@@ -647,21 +653,50 @@ function sketch(q) {
   q.setup = function() {
     debug.info('Q5 setup called');
     try {
-      // Force 2D context (no WEBGL) as 3D functions aren't fully supported
-      q.createCanvas(window.innerWidth, window.innerHeight);
-      debug.info('Canvas created with 2D renderer');
+      // Create canvas with proper positioning - same dimensions as p5 version
+      const canvas = q.createCanvas(window.innerWidth, window.innerHeight);
       
-      // Set color mode
-      q.colorMode(q.RGB, 1); // Set to q5's default float-based color mode
+      // Set canvas ID and positioning for consistency with p5 version
+      if (canvas && canvas.canvas) {
+        canvas.canvas.id = 'treeCanvas';
+        // Apply same styling as p5 version
+        canvas.canvas.style.position = 'fixed';
+        canvas.canvas.style.top = '0';
+        canvas.canvas.style.left = '0';
+        canvas.canvas.style.zIndex = '-1'; // Behind content, just like p5 version
+      }
       
-      // Center rectangle mode
+      debug.info('Canvas created with 2D renderer and positioned correctly');
+      
+      // Set color mode to match float values used in q5 (0-1 instead of 0-255)
+      q.colorMode(q.RGB, 1);
+      
+      // Center rectangle mode for consistent drawing
       if (typeof q.rectMode === 'function') {
         q.rectMode(q.CENTER);
       }
       
       q.noStroke();
-      setupControlPanel();
+      
+      // Initialize parameters
+      lastFrameTime = performance.now();
+      
+      // Load saved settings and set up UI
       loadSavedPreset();
+      updateIntermediateColors();
+      setupControlPanel();
+      
+      // Force first update
+      needsUpdate = true;
+      
+      // Show the control panel by default - matches p5 version
+      const controlPanel = document.getElementById('controlPanel');
+      const showPanelButton = document.getElementById('showPanel');
+      if (controlPanel && showPanelButton) {
+        controlPanel.style.display = 'block';
+        showPanelButton.style.display = 'none';
+      }
+      
       debug.info('Q5 setup completed successfully');
     } catch (error) {
       debug.error('Failed to complete Q5 setup:', error);
@@ -779,11 +814,25 @@ function sketch(q) {
       const startTime = performance.now();
       squaresDrawn = 0;
       
-      // Clear the canvas
-      q.background(1); // Clear with white in float-based color mode
+      // Clear the canvas like p5.js does
+      if (typeof q.clear === 'function') {
+        q.clear(); // Use clear() if available
+      } else {
+        // Fall back to using background if clear isn't available
+        // For transparency support, use RGBA with alpha=0 (fully transparent)
+        q.background(1, 1, 1, 1); // White with full opacity in float-based color mode
+      }
       
       // Calculate scroll progress (0-1 based on page scroll position)
-      const scrollProgress = constrain(window.scrollY / (document.body.scrollHeight - window.innerHeight), 0, 1);
+      const maxScroll = document.body.scrollHeight - window.innerHeight;
+      const currentScroll = window.scrollY;
+      // Match p5 version's scroll calculation exactly
+      const scrollProgress = constrain(currentScroll / maxScroll, 0, 1);
+      
+      // Debug scroll position
+      if (frameCount % 60 === 0) {
+        debug.info(`Scroll position: ${currentScroll}/${maxScroll} = ${(scrollProgress * 100).toFixed(1)}%`);
+      }
       
       // Calculate normalized scroll progress based on growth start/end settings
       const growthRange = window.config.growthEnd - window.config.growthStart;
@@ -799,26 +848,31 @@ function sketch(q) {
       // Calculate target zoom based on scroll
       targetZoom = map(scrollProgress, 0, 1, 1.0, window.config.maxZoom);
       
-      // Smoothly adjust zoom
+      // Smoothly adjust zoom - same as p5 version
       zoomFactor += (targetZoom - zoomFactor) * window.config.zoomSpeed;
       
       // Ensure zoom is exactly 1.0 when at the top of the page (with a small tolerance)
       if (scrollProgress < 0.01) {
-        zoomFactor = lerp(zoomFactor, 1.0, 0.1);  // Faster convergence to 1.0 when near top
+        zoomFactor = lerp(zoomFactor, 1.0, 0.1);
         if (Math.abs(zoomFactor - 1.0) < 0.01) {
-          zoomFactor = 1.0;  // Snap to exactly 1.0 when very close
+          zoomFactor = 1.0;
         }
       }
       
       // Apply transformations and draw the tree
       q.push();
       
-      // Position in screen coordinates
+      // First translate to center of canvas (q5 doesn't auto-center like p5 in WEBGL mode)
+      q.translate(q.width/2, q.height/2);
+      
+      // Then add position offsets - exactly like p5 version
       const xPos = map(window.config.xPosition, 0, 100, -q.width/2, q.width/2);
       const yPos = map(window.config.yPosition, 0, 100, -q.height/2, q.height/2);
       q.translate(xPos, yPos);
       
-      // Apply 2D rotation (only Z rotation works in 2D mode)
+      // Apply 3D-like rotations in the same order as p5
+      // In q5 2D mode, only Z rotation works directly, but we can simulate X/Y rotation effects
+      // with scaling and additional transforms if needed in the future
       q.rotate(q.radians(window.config.rotationZ));
       
       // Scale based on zoom factor
@@ -838,9 +892,9 @@ function sketch(q) {
       // Mark update as complete
       needsUpdate = false;
       
-      // Log success
+      // Log success (reduced frequency compared to original)
       if (squaresDrawn > 0 && frameCount % 60 === 0) {
-        debug.info(`Frame rendered with ${squaresDrawn} squares`);
+        debug.info(`Frame rendered with ${squaresDrawn} squares in ${renderTime.toFixed(2)}ms`);
       }
     } catch (error) {
       debug.error('Error in draw loop:', error);
@@ -852,11 +906,19 @@ function sketch(q) {
     debug.info('Window resize detected');
     try {
       q.resizeCanvas(window.innerWidth, window.innerHeight);
+      needsUpdate = true; // Force redraw after resize
       debug.info('Canvas resized successfully');
     } catch (error) {
       debug.error('Failed to resize canvas:', error);
     }
   };
+  
+  // Event listeners - add scroll listener like in p5 version
+  window.addEventListener('scroll', function() {
+    needsUpdate = true;
+    lastScrollY = window.scrollY;
+    debug.info('Scroll event detected');
+  });
 }
 
 // Export the initialization function at the module level

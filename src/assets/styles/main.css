@@ -14,10 +14,12 @@ body {
 }
 
 .content {
-  height: 300vh; /* Allows scrolling */
+  height: 500vh; /* Increased height for better scrolling range */
   padding-top: 20vh;
   text-align: center;
   color: #221F20;
+  position: relative;
+  z-index: 1; /* Ensure content is above canvas */
 }
 
 #controlPanel {
